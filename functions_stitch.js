@@ -683,6 +683,10 @@ try{
     patchSingle: patchSingle
   };
 
+  function validateEmail(mail){
+    return (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(mail));
+  }
+
   // ASYNC FUNCTIONS
   var updateRemoteModel = async function(){
     syncLabelNearToVersion();
@@ -901,8 +905,8 @@ try{
 
   var performLogin = async function(){
 
-    let email = document.getElementById("email").value;
-    let password = document.getElementById("password").value;
+    let email = document.getElementById("login_email").value;
+    let password = document.getElementById("login_password").value;
 
     if(email.length == 0 || password.length == 0){
       openAlertDialog("Riempi tutti i campi prima di procedere.");
