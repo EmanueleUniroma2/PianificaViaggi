@@ -58,16 +58,21 @@ html{
 .travel_gif{
   margin-bottom: 1rem;
 }
-.noaccount{
+.inline_with_link_text{
   margin-top: 1rem;
   display: inline-block;
 }
-.register_label{
+.inline_link_label{
   display: inline-block;
   cursor: pointer;
   border-bottom: 1px solid blue;
   color: blue;
   margin-left: 0.5rem;
+}
+.small_form_text{
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  opacity: 0.8;
 }
 .registration_specification{
   padding: 1rem;

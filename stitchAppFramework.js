@@ -1130,6 +1130,16 @@ class StitchAppClient {
     }
     async resendConfirmationEmail(email){
 
+      if(isVoidString(email)){
+        this.openAlertDialog("Il campo Email non può essere vuoto");
+        return null;
+      }
+
+      if(!validateEmail(email)){
+        this.openAlertDialog("Il campo Email deve contenere un indirizzo email valido");
+        return null;
+      }
+
       this.toggleAPISpinner(true);
       return this.handleApiResult(await this.server.resendConfirmationEmail(email), "Abbiamo reinviato una email di conferma al tuo indirizzo. Clicca nel link dell'email per completare la registrazione.");
     }

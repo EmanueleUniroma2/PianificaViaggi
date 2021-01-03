@@ -29,11 +29,11 @@ var App_Pages = [
           },
           {
             "node_type": "div",
-            "node_tags": [["className", "noaccount"], ["innerHTML", "Non hai un account?"]],
+            "node_tags": [["className", "inline_with_link_text"], ["innerHTML", "Non hai un account?"]],
             "node_childs": [
               {
                 "node_type": "div",
-                "node_tags": [["className", "register_label"], ["innerHTML", "registrati!"], ["onclick", "navigate('register')"]]
+                "node_tags": [["className", "inline_link_label"], ["innerHTML", "registrati!"], ["onclick", "navigate('register')"]]
               },
             ]
           }
@@ -71,7 +71,21 @@ var App_Pages = [
           {
             "node_type": "div",
             "node_tags": [["className", "button"], ["onclick", "navigate('login')"], ["innerHTML", "INDIETRO"]]
-          }
+          },
+          {
+            "node_type": "div",
+            "node_tags": [["className", "inline_with_link_text"], ["innerHTML", "Non hai ricevuto l'email?"]],
+            "node_childs": [
+              {
+                "node_type": "div",
+                "node_tags": [["className", "inline_link_label"], ["innerHTML", "Richiedi un altra email di conferma! *"], ["onclick", "performEmailResend();"]]
+              },
+            ]
+          },
+          {
+            "node_type": "div",
+            "node_tags": [["className", "small_form_text"], ["innerHTML", "*Verrà utilizzato l'indirizzo email attualmente indicato nel form di questa pagina."]]
+          },
         ]
       }
     ]
@@ -157,9 +171,13 @@ function performRegister(){
   stitchClient.registerUser(email, password, password_2);
 }
 
+function performEmailResend() {
+  let email = getInputValue("register_email");
+  stitchClient.resendConfirmationEmail(email);
+}
+
 function performPasswordReset(){
   let password = getInputValue("reset_password");
   let password_2 = getInputValue("reset_password_2");
-
   stitchClient.resetPassword(password,password_2);
 }
