@@ -145,6 +145,7 @@ var App_Pages = [
 
 
 // init here db name and realm app name
+const version_label = "Versione 0.2 (non aperto al pubblico)";
 const app_name = "pianificaeviaggia-ljhog";
 const db_name = "guitar_online_user_data";
 const stitchClient = new StitchAppClient(app_name, db_name);
@@ -157,6 +158,7 @@ function boot(){
   stitchClient.registerAppTargetNodeId("page_content");
   stitchClient.registerAppPages(App_Pages);
   stitchClient.boot();
+  setVersion();
 }
 
 function performLogin(){
@@ -187,4 +189,11 @@ function performUserConfirmation() {
   if(stitchClient.confirmUser() == null){
     navigate('login');
   }
+}
+
+function setVersion() {
+  let node = document.createElement("div");
+  node.innerHTML = version_label;
+  node.className = "version";
+  document.body.appendChild(node);
 }
