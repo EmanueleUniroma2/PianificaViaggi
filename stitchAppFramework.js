@@ -341,7 +341,7 @@ class StitchServerClient{
 
     try{
       await this.stitch_actual_client.auth.loginWithCredential(new stitch.UserPasswordCredential(email.toLowerCase(), password));
-      storeCredentials(email.toLowerCase(), password);
+      this.storeCredentials(email.toLowerCase(), password);
       console.info("Success.");
     }
     catch(e){
