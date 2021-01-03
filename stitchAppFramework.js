@@ -877,10 +877,7 @@ class StitchAppClient {
             if (!error_result) {
                 this.pageNavigate();
             }
-        } else {
-            this.setNavigation("home");
         }
-
         return result;
     }
 
