@@ -1,16 +1,21 @@
 html{
   font-family: cursive;
 }
-
 .body_style{
   margin: 0;
   padding: 0;
   background: linear-gradient(45deg, #5661a4, #cce3ff);
 }
-.login_page{
+.form_page{
   padding: 2rem 1rem;
   text-align: center;
 }
+
+
+
+
+
+
 .input_entry{
   margin: 0.5rem auto;
   width: 100%;
@@ -53,74 +58,10 @@ html{
 .travel_gif{
   margin-bottom: 1rem;
 }
-.modal_dialog_inkdrop{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 100;
-    background-color: rgba(0,0,0,0.8);
-    opacity: 0;
-    transition: opacity 0.3s ease-out;
-}
-
-.modal_dialog{
-	border-radius: 1rem;
-	margin: 10em auto;
-	background-color: white;
-	width: 50vw;
-	padding: 1em;
-}
-.modal_title{
-  font-weight: bold;
-  font-size: 1.3em;
-  color: black;
-}
-
-.modal_button{
-	display: inline-block;
-  margin: 0 1em;
-  color: black;
-  font-weight: bold;
-  border: 1px solid;
-  padding: 0.1em 0.4em;
-  min-width: 5em;
-  text-align: center;
-  cursor: pointer;
-}
-
-.api_spinner_backdrop{
-    position: fixed;
-    top: 0em;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-color: white;
-    opacity: 0.7;
-    z-index: 15;
-}
-
-.api_spinner{
-    position: fixed;
-    margin: 0 auto;
-    top: 10em;
-    width: 7em;
-    left: 3em;
-    right: 0;
-    height: 7em;
-    border: 1em solid transparent;
-    border-radius: 50%;
-    border-bottom: 1em solid #3b3b9e;
-    animation: spin 0.5s linear infinite;
-    z-index: 15;
-}
-
 .noaccount{
   margin-top: 1rem;
   display: inline-block;
 }
-
 .register_label{
   display: inline-block;
   cursor: pointer;
@@ -128,28 +69,12 @@ html{
   color: blue;
   margin-left: 0.5rem;
 }
-
+.registration_specification{
+  padding: 1rem;
+  background: rgba(0,0,0,0.1);
+}
 .unknown_page_label{
   text-align: center;
   margin-top: 10rem;
   color: white;
-}
-
-
-@keyframes spin {
-	from {
-		transform: rotate(0deg);
-	}
-	to {
-		transform: rotate(360deg);
-	}
-}
-
-@-moz-keyframes spin {
-	from {
-		-moz-transform: rotate(0deg);
-	}
-	to {
-		-moz-transform: rotate(360deg);
-	}
 }
