@@ -95,6 +95,7 @@ var App_Pages = [
     "content": [
       {
         "node_type":"div",
+        "node_afterinit": "performUserConfirmation",
         "node_tags": [["className","form_page"]],
         "node_childs": [
           {
@@ -180,4 +181,10 @@ function performPasswordReset(){
   let password = getInputValue("reset_password");
   let password_2 = getInputValue("reset_password_2");
   stitchClient.resetPassword(password,password_2);
+}
+
+function performUserConfirmation() {
+  if(stitchClient.confirmUser() == null){
+    navigate('login');
+  }
 }

@@ -949,11 +949,16 @@ class StitchAppClient {
         let nodeType = element["node_type"];
         let nodeTags = element["node_tags"];
         let childs = element["node_childs"];
+        let afterInit = element["node_afterinit"];
 
         let last_created = this.betterAppendChild(fatherNode, this.betterCreateElement(nodeType, nodeTags));
 
         if(!isNullOrUndefined(childs)){
           this.buildPage(last_created, childs);
+        }
+
+        if(!isVoidString(afterInit)){
+          window[afterInit]();
         }
       }
     }
