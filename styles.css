@@ -1,3 +1,4 @@
+/* Pages */
 html{
   font-family: cursive;
 }
@@ -10,17 +11,28 @@ html{
   padding: 2rem 1rem;
   text-align: center;
 }
+.inner_page{
+
+}
 
 
 
 
 
 
+/* Widgets specific styles */
 .input_entry{
   margin: 0.5rem auto;
   width: 100%;
   max-width: 20rem;
   display: block;
+}
+.checkbox_label_wrap{
+  cursor: pointer;
+}
+.checkbox_label{
+  display: inline-block;
+  margin-left: 0.5rem;
 }
 .button{
   background: linear-gradient(45deg, #cdd0e7, #f6faff);
@@ -40,6 +52,17 @@ html{
 .button:active{
   background: linear-gradient(45deg, #a8aabe, #b2b6bb);
 }
+
+
+
+
+
+
+
+
+
+
+/* Specific generic styles */
 .title{
   font-size: 2rem;
   background-color: rgba(0,0,0,0.1);
@@ -78,8 +101,20 @@ html{
   padding: 1rem;
   background: rgba(0,0,0,0.1);
 }
-.unknown_page_label{
+.go_to_login_help{
+  text-align: center;
+  color: #27282e;
+}
+.go_to_login_link{
+  display: inline-block;
+  margin-left: 0.5rem;
+  color: blue;
+  border-bottom: 1px solid blue;
+  cursor: pointer;
+}
+.locked_page_label{
   text-align: center;
   margin-top: 10rem;
-  color: white;
+  margin-bottom: 2rem;
+  color: #27282e;
 }

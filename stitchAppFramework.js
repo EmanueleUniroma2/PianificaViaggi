@@ -1,6 +1,26 @@
 
 var lastInitedAppClient = null;
 
+function storageRemoveItem(name){
+  localStorage.removeItem(name);
+}
+
+function storageGetItem(name){
+  let el = localStorage.getItem(name);
+  if(!isNullOrUndefined(el)){
+    return JSON.parse(el);
+  }else{
+    return "";
+  }
+}
+function storageSetItem(name, value){
+  let ready_to_save = JSON.stringify(value);
+  localStorage.setItem(name, ready_to_save);
+}
+function clearStorage(){
+  localStorage.clear();
+}
+
 function pageHasChanged(){
   if(!isNullOrUndefined(lastInitedAppClient)){
     lastInitedAppClient.pageNavigate();
@@ -24,8 +44,28 @@ function getInputValue(id){
     return null;
   }
 }
-
-
+function setInputValue(id, value) {
+  let el = document.getElementById(id);
+  if(!isNullOrUndefined(el)){
+    el.value = value;
+  }
+}
+function getCheckboxIsChecked(id){
+  let el = document.getElementById(id);
+  if(!isNullOrUndefined(el)){
+    return el.checked;
+  }else{
+    return null;
+  }
+}
+function setCheckboxIsChecked(id, setted){
+  let el = document.getElementById(id);
+  if(!isNullOrUndefined(el)){
+    el.checked = setted;
+  }else{
+    return null;
+  }
+}
 /*
   Just some embedded styles for dialogs and loading spinners
 */
@@ -313,7 +353,9 @@ class StitchServerClient{
 
     let error = null;
 
-    if(isAuthenticated()){
+    if(!this.isAuthenticated()){
+      console.error("db.logout", "user is not authenticated.");
+    }else{
       try{
         await this.promiseTimeout(client.auth.logout());
       }
@@ -424,7 +466,7 @@ class StitchServerClient{
 
     let result = null;
 
-    if(!isAuthenticated()){
+    if(!this.isAuthenticated()){
       console.error("db.fetch", "user is not authenticated.");
     }else{
       console.info("Tryng fetch.");
@@ -678,12 +720,21 @@ class StitchAppClient {
     }
 
     // search for a page by name key and return the content key
-    getPageDescByName(name){
+    getPageDescByName(searched_name){
+
       for(let i = 0; i < this.appPages.length; i++){
-        if(this.appPages[i]["name"] == name){
-          return this.appPages[i]["content"];
+
+        let page = this.appPages[i];
+        let name = page["name"];
+        let content = page["content"];
+        let authRequired = page["requiresAuth"];
+
+        // you can access a page if it does not require a login, or if you are logged in
+        if(searched_name == name && (!authRequired || this.server.isAuthenticated())){
+          return content;
         }
       }
+
       return null;
     }
 
@@ -873,11 +924,6 @@ class StitchAppClient {
 
         let params_list = my_url_var.split("?");
 
-        if (params_list.length == 1) {
-            if (!error_result) {
-                this.pageNavigate();
-            }
-        }
         return result;
     }
 
@@ -912,7 +958,7 @@ class StitchAppClient {
         if(!isNullOrUndefined(pageContent)){
           this.buildPageBase(pageContent);
         }else{
-          this.showUnknownPage();
+          this.showLockedPage();
         }
     }
 
@@ -961,16 +1007,31 @@ class StitchAppClient {
     }
 
     // default unknown page
-    showUnknownPage() {
+    showLockedPage() {
 
         let p = this.getCleanNavigationPanel();
         let last;
 
-        last = this.betterAppendChild(p, this.betterCreateElement("div", [
-            ["className", "unknown_page_label"],
-            ["innerHTML", "Pagina sconosciuta."]
-        ]));
-
+        if(this.server.isAuthenticated()){
+          last = this.betterAppendChild(p, this.betterCreateElement("div", [
+              ["className", "locked_page_label"],
+              ["innerHTML", "La pagina a cui vuoi accedere non esiste."]
+          ]));
+        }else{
+          last = this.betterAppendChild(p, this.betterCreateElement("div", [
+              ["className", "locked_page_label"],
+              ["innerHTML", "La pagina a cui vuoi accedere è riservata agli utenti registrati, oppure non esiste."]
+          ]));
+          last = this.betterAppendChild(p, this.betterCreateElement("div", [
+              ["className", "go_to_login_help"],
+              ["innerHTML", "Se possiedi un account registrato, puoi accedere tramite la"]
+          ]));
+          last = this.betterAppendChild(last, this.betterCreateElement("div", [
+              ["className", "go_to_login_link"],
+              ["innerHTML", "pagina di login."],
+              ["onclick","navigate('login')"]
+          ]));
+        }
     }
 
     // read a section of the url
@@ -1085,12 +1146,12 @@ class StitchAppClient {
 
       if(isVoidString(password)){
         this.openAlertDialog("Il campo Password non può essere vuoto");
-        return null;
+        return "error";
       }
 
       if(password != password_2){
         this.openAlertDialog("Le due password non coincidono.");
-        return null;
+        return "error";
       }
 
       this.toggleAPISpinner(true);
@@ -1100,22 +1161,22 @@ class StitchAppClient {
 
       if(isVoidString(email)){
         this.openAlertDialog("Il campo Email non può essere vuoto");
-        return null;
+        return "error";
       }
 
       if(!validateEmail(email)){
         this.openAlertDialog("Il campo Email deve contenere un indirizzo email valido");
-        return null;
+        return "error";
       }
 
       if(isVoidString(password)){
         this.openAlertDialog("Il campo Password non può essere vuoto");
-        return null;
+        return "error";
       }
 
       if(password != password_2){
         this.openAlertDialog("Le due password non coincidono.");
-        return null;
+        return "error";
       }
 
       this.toggleAPISpinner(true);
@@ -1134,12 +1195,12 @@ class StitchAppClient {
 
       if(isVoidString(email)){
         this.openAlertDialog("Il campo Email non può essere vuoto");
-        return null;
+        return "error";
       }
 
       if(!validateEmail(email)){
         this.openAlertDialog("Il campo Email deve contenere un indirizzo email valido");
-        return null;
+        return "error";
       }
 
       this.toggleAPISpinner(true);
@@ -1149,22 +1210,22 @@ class StitchAppClient {
 
       if(isVoidString(email)){
         this.openAlertDialog("Il campo Email non può essere vuoto");
-        return null;
+        return "error";
       }
 
       if(!validateEmail(email)){
         this.openAlertDialog("Il campo Email deve contenere un indirizzo email valido");
-        return null;
+        return "error";
       }
 
       if(isVoidString(password)){
         this.openAlertDialog("Il campo Password non può essere vuoto");
-        return null;
+        return "error";
       }
 
       if(isVoidString(password)){
         this.openAlertDialog("Il campo Password non può essere vuoto");
-        return null;
+        return "error";
       }
 
       this.toggleAPISpinner(true);

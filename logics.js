@@ -2,6 +2,7 @@
 var App_Pages = [
   {
     "name" : "login",
+    "requiresAuth": false,
     "content": [
       {
         "node_type":"div",
@@ -24,6 +25,20 @@ var App_Pages = [
             "node_tags" : [["id","login_password"], ["type","password"], ["className", "input_entry"], ["placeholder", "Password"]]
           },
           {
+            "node_type":"label",
+            "node_tags":[["className","checkbox_label_wrap"], ["onclick", "rememberMeToggle();"]],
+            "node_childs": [
+              {
+                "node_type":"input",
+                "node_tags":[["type","checkbox"], ["id","rememberme"]]
+              },
+              {
+                "node_type":"div",
+                "node_tags":[["className","checkbox_label"],["innerHTML","Ricordami su questo dispositivo"]],
+              }
+            ]
+          },
+          {
             "node_type": "div",
             "node_tags": [["className", "button"], ["onclick", "performLogin();"], ["innerHTML", "ACCEDI"]]
           },
@@ -42,7 +57,28 @@ var App_Pages = [
     ]
   },
   {
+    "name" : "home",
+    "requiresAuth": true,
+    "content": [
+      {
+        "node_type":"div",
+        "node_tags": [["className","inner_page"]],
+        "node_childs": [
+          {
+            "node_type": "div",
+            "node_tags": [["className", "registration_specification"], ["innerHTML", "Ben venuto nella home page del sito!"]]
+          },
+          {
+            "node_type": "div",
+            "node_tags": [["className", "registration_specification"], ["innerHTML", "Pagina in costruzione."]]
+          },
+        ]
+      }
+    ]
+  },
+  {
     "name" : "register",
+    "requiresAuth": false,
     "content": [
       {
         "node_type":"div",
@@ -92,6 +128,7 @@ var App_Pages = [
   },
   {
     "name": "confirm_user",
+    "requiresAuth": false,
     "content": [
       {
         "node_type":"div",
@@ -112,6 +149,7 @@ var App_Pages = [
   },
   {
     "name": "reset_password",
+    "requiresAuth": false,
     "content": [
       {
         "node_type":"div",
@@ -158,13 +196,24 @@ function boot(){
   stitchClient.registerAppTargetNodeId("page_content");
   stitchClient.registerAppPages(App_Pages);
   stitchClient.boot();
+
   setVersion();
+  rememberMeFeature();
 }
 
-function performLogin(){
+async function performLogin(){
+
   let email = getInputValue("login_email");
   let password = getInputValue("login_password");
-  stitchClient.login(email, password);
+
+  if(storageGetItem("rememberme", rememberme)){
+    storageSetItem("email", email);
+    storageSetItem("password", password);
+  }
+
+  if(await stitchClient.login(email, password) == null){
+    navigate('home');
+  }
 }
 
 function performRegister(){
@@ -196,4 +245,25 @@ function setVersion() {
   node.innerHTML = version_label;
   node.className = "version";
   document.body.appendChild(node);
+}
+
+function rememberMeToggle() {
+  storageSetItem("rememberme", getCheckboxIsChecked("rememberme"));
+}
+
+
+function rememberMeFeature(){
+  let checked = storageGetItem("rememberme", rememberme);
+
+  setCheckboxIsChecked("rememberme",checked);
+
+  if(checked){
+    setInputValue("login_email", storageGetItem("email"));
+    setInputValue("login_password", storageGetItem("password"));
+  }else{
+    setInputValue("login_email", "");
+    setInputValue("login_password", "");
+    storageRemoveItem("email");
+    storageRemoveItem("password");
+  }
 }
