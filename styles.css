@@ -61,7 +61,6 @@ html{
 
 
 
-
 /* Specific generic styles */
 .title{
   font-size: 2rem;
@@ -69,11 +68,61 @@ html{
   color: #2e4186;
   padding: 0.5rem;
 }
+.subtitle{
+  background: rgba(255,255,255,0.4);
+  border: 1px solid rgba(0,0,0,0.2);
+  margin: 1rem 0;
+  padding: 0.5rem;
+  text-align: left;
+}
+.generic_label{
+  color: rgba(0,0,0,0.8);
+}
+.generic_select{
+  padding: 0.5rem;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+.generic_button{
+  background: rgba(0,0,0,0.1);
+  border: 2px solid rgba(0,0,0,0.2);
+  margin: 0.2rem;
+  padding: 0.2rem;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+.generic_button:hover{
+  background: rgba(0,0,0,0.2);
+}
+.generic_button:active{
+  background: rgba(0,0,0,0.3);
+}
+.home_squares_wrapper{
+  padding-top: 3rem;
+  width: 100%;
+}
+.home_left_square{
+  background: rgba(255,255,255,0.4);
+  margin: 1rem;
+  border: 1px solid rgba(0,0,0,0.2);
+  padding: 0.5rem;
+  width: 40%;
+  display: inline-block;
+  min-width: 20rem;
+}
+.home_right_square{
+  background: rgba(255,255,255,0.4);
+  margin: 1rem;
+  border: 1px solid rgba(0,0,0,0.2);
+  padding: 0.5rem;
+  width: 40%;
+  display: inline-block;
+  min-width: 20rem;
+}
 .version{
-  bottom: 1rem;
-  right: 1rem;
-  position: fixed;
-  margin-right: 1rem;
+  margin: 1rem;
+  float: right;
   font-size: 0.8rem;
   opacity: 0.8;
   font-family: monospace;
@@ -97,9 +146,51 @@ html{
   font-size: 0.8rem;
   opacity: 0.8;
 }
-.registration_specification{
+.toolbar_user_menu{
+    position: absolute;
+    margin-top: 0.4rem;
+    right: 1.1rem;
+    width: 15rem;
+    background: white;
+}
+.toolbar_user_menu_row{
+  padding: 0.5rem 1rem;
+  border-top: 1px solid rgba(0,0,0,0.2);
+  background: rgba(0,0,0,0.05);
+}
+.toolbar_user_menu_row:hover{
+background: rgba(0,0,0,0.1);
+}
+.toolbar_user_menu_row:active{
+background: rgba(0,0,0,0.2);
+}
+.topbar_specification{
   padding: 1rem;
   background: rgba(0,0,0,0.1);
+  border: 1px solid rgba(0,0,0,0.2);
+}
+.toolbar_label{
+  display: inline-block;
+  width: 50%;
+  font-size: 1.3rem;
+  background: linear-gradient(45deg, white, 30%, #ffffff00, 90%, #ffffff00, 100%, #ffffff00);
+  padding: 0.2rem 1rem;
+  border-radius: 0.6rem;
+}
+.toolbar_button{
+  display: inline-block;
+  float: right;
+  cursor: pointer;
+  padding: 0.2rem 1rem;
+  background: rgba(0,0,0,0.05);
+  user-select: none;
+  border: 1px solid rgba(0,0,0,0.2);
+}
+.toolbar_button:hover{
+  background: rgba(0,0,0,0.1);
+}
+.toolbar_button:active{
+  background: rgba(0,0,0,0.2);
 }
 .go_to_login_help{
   text-align: center;

@@ -357,7 +357,7 @@ class StitchServerClient{
       console.error("db.logout", "user is not authenticated.");
     }else{
       try{
-        await this.promiseTimeout(client.auth.logout());
+        await this.promiseTimeout(this.stitch_actual_client.auth.logout());
       }
       catch(e){
         error = e;
@@ -594,8 +594,8 @@ class StitchServerClient{
 
     if(stored != null){
       let obj = JSON.parse(stored);
-      EMAIL = obj.email;
-      PASSWORD = obj.password;
+      this.email = obj.email;
+      this.password = obj.password;
       return true;
     }
 
@@ -614,8 +614,6 @@ class StitchServerClient{
 
   // remove stitch credentials and session tokens
   killCachedSessionAndCredentials(){
-
-    client.auth.user = undefined;
 
     Object.keys(localStorage).forEach(function(key){
       if(key.substring(0,"__stitch".length) == "__stitch"){
@@ -1100,10 +1098,24 @@ class StitchAppClient {
 
             for (let i = 0; i < moreFlags.length; i++) {
 
-                if (moreFlags[i][0] != "onclick") {
-                    el[moreFlags[i][0]] = moreFlags[i][1];
+                let keyname = moreFlags[i][0];
+                let content = moreFlags[i][1];
+
+                // you can init a flag with a '$call_' to call a function named as
+                // the rest of the string e.g: $call_foo will call foo() and init content with the
+                // returned value
+                if(content.substring(0,"$call_".length) == "$call_"){
+                  try{
+                    content = window[content.substring("$call_".length)]();
+                  }catch(e){
+                    content = "";
+                  }
+                }
+
+                if (keyname != "onclick") {
+                    el[keyname] = content;
                 } else {
-                    el.setAttribute("onclick", moreFlags[i][1]);
+                    el.setAttribute("onclick",content);
                 }
 
             }
@@ -1125,8 +1137,15 @@ class StitchAppClient {
         return ''; // chrome requires return value
     }
 
+    // get logged Email
+    loggedEmail(){
+      return this.server.email;
+    }
+
     // needed for any action to begin
     boot(){
+
+        this.server.loadStoredCredentials();
 
         if(lastInitedAppClient == null){
           window.addEventListener('hashchange', pageHasChanged, false);
@@ -1184,8 +1203,8 @@ class StitchAppClient {
     }
     async sendResetPasswordEmail(email){
 
-      if(!isVoidString(this.email)){
-        email = this.email;
+      if(!isVoidString(this.server.email)){
+        email = this.server.email;
       }
 
       this.toggleAPISpinner(true);
@@ -1230,6 +1249,10 @@ class StitchAppClient {
 
       this.toggleAPISpinner(true);
       return this.handleApiResult(await this.server.login(email, password), null);
+    }
+    async logout(){
+      this.toggleAPISpinner(true);
+      return this.handleApiResult(await this.server.logout(), null);
     }
     async setDeveloperFlag(collection, mode){
 

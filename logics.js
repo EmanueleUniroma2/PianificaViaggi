@@ -7,6 +7,7 @@ var App_Pages = [
       {
         "node_type":"div",
         "node_tags": [["className","form_page"]],
+        "node_afterinit": "loginSetup",
         "node_childs": [
           {
             "node_type": "img",
@@ -15,6 +16,10 @@ var App_Pages = [
           {
             "node_type": "div",
             "node_tags": [["className","title"], ["innerHTML","Pianifica e Viaggia"]],
+          },
+          {
+            "node_type": "div",
+            "node_tags": [["className","subtitle"], ["innerHTML","Vuoi organizzare un viaggio con varie persone, ma non conosci gli impegni di tutti? Usando <strong>Pianifica e Viaggia</strong> non dovrai più faticare a tener traccia di tutte le date scomode. Tu e i tuoi amici potete indicare quali sono le date del calendario che sono ottime, medie o pessime per viaggiare. Tutti gli amici di un gruppo vedono le date indicate dagli altri e dedurre così date perfette!"]],
           },
           {
             "node_type": "input",
@@ -66,12 +71,88 @@ var App_Pages = [
         "node_childs": [
           {
             "node_type": "div",
-            "node_tags": [["className", "registration_specification"], ["innerHTML", "Ben venuto nella home page del sito!"]]
+            "node_tags": [["className", "topbar_specification"]],
+            "node_childs": [
+              {
+                "node_type": "div",
+                "node_tags": [["className", "toolbar_label"], ["innerHTML", "Pianifica e Viaggia!"]]
+              },
+              {
+                "node_type": "div",
+                "node_tags": [["innerHTML", "$call_getLoggedEmail"], ["className","toolbar_button"], ["onclick","openToolbarMenu(this)"]]
+              }
+            ]
           },
           {
-            "node_type": "div",
-            "node_tags": [["className", "registration_specification"], ["innerHTML", "Pagina in costruzione."]]
-          },
+            "node_type": "table",
+            "node_tags": [["className", "home_squares_wrapper"]],
+            "node_childs": [
+                {
+                  "node_type": "tr",
+                  "node_tags": [],
+                  "node_childs": [
+                    {
+                      "node_type": "td",
+                      "node_tags": [["className","home_left_square"]],
+                      "node_childs": [
+
+
+                            {
+                              "node_type": "div",
+                              "node_tags": [["innerHTML", "Su quale gruppo vuoi lavorare?"],["className","generic_label"]]
+                            },
+                            {
+                              "node_type": "select",
+                              "node_tags": [["className","generic_select"]],
+                              "node_childs": [
+                                {
+                                  "node_type": "option",
+                                  "node_tags": [["innerHTML","gruppo1"]],
+                                },
+                                {
+                                  "node_type": "option",
+                                  "node_tags": [["innerHTML","gruppo2"]],
+                                },
+                                {
+                                  "node_type": "option",
+                                  "node_tags": [["innerHTML","gruppo3"]],
+                                }
+                              ]
+                            },
+                            {
+                              "node_type": "div",
+                              "node_tags": [["innerHTML", "Inserisci le tue date"],["className","generic_button"]]
+                            },
+                            {
+                              "node_type": "div",
+                              "node_tags": [["innerHTML", "Invita su questo gruppo"],["className","generic_button"]]
+                            },
+                            {
+                              "node_type": "div",
+                              "node_tags": [["innerHTML", "Crea un nuovo gruppo"],["className","generic_button"]]
+                            },
+                            {
+                              "node_type": "div",
+                              "node_tags": [["innerHTML", "Cancella questo gruppo"],["className","generic_button"]]
+                            }
+
+
+                      ]
+                    },
+                    {
+                      "node_type": "td",
+                      "node_tags": [["className","home_right_square"]],
+                      "node_childs": [
+                        {
+                          "node_type": "div",
+                          "node_tags": [["innerHTML", "Sezione destra"]]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+          }
         ]
       }
     ]
@@ -86,7 +167,7 @@ var App_Pages = [
         "node_childs": [
           {
             "node_type": "div",
-            "node_tags": [["className", "registration_specification"], ["innerHTML", "Registrarsi è gratis e ti permette di pianificare viaggi con i tuoi amici e tenere traccia degli impegni che hanno pubblicato."]]
+            "node_tags": [["className", "topbar_specification"], ["innerHTML", "Registrarsi è gratis e ti permette di pianificare i viaggi con i tuoi amici e tenere traccia degli impegni che hanno pubblicato."]]
           },
           {
             "node_type": "input",
@@ -137,7 +218,7 @@ var App_Pages = [
         "node_childs": [
           {
             "node_type": "div",
-            "node_tags": [["className", "registration_specification"], ["innerHTML", "Pagina di conferma dell'email. Se tutto va bene, dovresti vedere un messaggio di successo."]]
+            "node_tags": [["className", "topbar_specification"], ["innerHTML", "Pagina di conferma dell'email. Se tutto va bene, dovresti vedere un messaggio di successo."]]
           },
           {
             "node_type": "div",
@@ -157,7 +238,7 @@ var App_Pages = [
         "node_childs": [
           {
             "node_type": "div",
-            "node_tags": [["className", "registration_specification"], ["innerHTML", "Reimposta la tua password tramite il form sottostante."]]
+            "node_tags": [["className", "topbar_specification"], ["innerHTML", "Reimposta la tua password tramite il form sottostante."]]
           },
           {
             "node_type": "input",
@@ -198,7 +279,13 @@ function boot(){
   stitchClient.boot();
 
   setVersion();
-  rememberMeFeature();
+  loginSetup();
+}
+
+function loginSetup(){
+  if(stitchClient.getUrlSection(1) == "login"){
+    rememberMeFeature();
+  }
 }
 
 async function performLogin(){
@@ -266,4 +353,48 @@ function rememberMeFeature(){
     storageRemoveItem("email");
     storageRemoveItem("password");
   }
+}
+
+async function performLogout() {
+  if(await stitchClient.logout() == null){
+    navigate('login');
+  }
+}
+
+function getLoggedEmail(){
+  return stitchClient.loggedEmail();
+}
+
+function openToolbarMenu(targetNode) {
+
+  // close it if open
+  let menu = document.getElementById("toolbar_user_menu_id");
+  if(!isNullOrUndefined(menu)){
+    while(menu.firstChild){
+      menu.removeChild(menu.firstChild);
+    }
+    menu.parentNode.removeChild(menu);
+    return;
+  }
+
+  // create it if missing
+  let voices = [["Cambia Password", "performResetPasswordEmailRequest()"], ["Logout","performLogout()"]];
+  menu = document.createElement("div");
+  menu.className = "toolbar_user_menu";
+  menu.id = "toolbar_user_menu_id";
+
+  for(let i = 0; i < voices.length;i++){
+      let voice = voices[i];
+      let row = document.createElement("div");
+      row.className = "toolbar_user_menu_row";
+      row.innerHTML = voice[0];
+      row.setAttribute("onclick", voice[1]);
+      menu.appendChild(row);
+  }
+
+  targetNode.appendChild(menu);
+}
+
+async function performResetPasswordEmailRequest() {
+  await stitchClient.sendResetPasswordEmail("");
 }
