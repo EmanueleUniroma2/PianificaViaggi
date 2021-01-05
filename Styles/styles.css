@@ -83,14 +83,38 @@ html{
   width: 100%;
   margin: 0.5rem 0;
 }
+.new_group_select_small{
+  width: 84% !important;
+}
+.new_group_label{
+  margin: 1rem;
+  font-size: 1.2rem;
+  margin-top: 2.5rem;
+}
+.new_group_select{
+  margin: 0 1rem;
+  width: 41.5%;
+  margin-bottom: 1rem;
+}
 .new_group_button{
-  margin: 1rem !important;
+  margin: 0 1rem !important;
   width: 40.5%;
   display: inline-block;
   min-width: 20.6rem;
+  position: relative;
+  top: 0.1rem;
 }
 .new_group_button_small{
   width: 82% !important;
+}
+.generic_disabled_button{
+  background: rgba(0,0,0,0.1);
+  border: 2px solid rgba(0,0,0,0.2);
+  margin: 0.2rem;
+  padding: 0.2rem;
+  text-align: center;
+  user-select: none;
+  opacity: 0.4;
 }
 .generic_button{
   background: rgba(0,0,0,0.1);
@@ -136,11 +160,14 @@ html{
   width: 80% !important;
 }
 .version{
-  margin: 1rem;
+  right: 1rem;
   float: right;
   font-size: 0.8rem;
   opacity: 0.8;
   font-family: monospace;
+  position: fixed;
+  bottom: 1rem;
+  user-select: none;
 }
 .travel_gif{
   margin-bottom: 1rem;

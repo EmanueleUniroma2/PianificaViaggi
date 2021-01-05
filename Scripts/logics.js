@@ -100,11 +100,21 @@ var App_Pages = [
           },
           {
             "node_type": "div",
-            "node_tags": [["innerHTML", "Crea un nuovo gruppo"],["className","generic_button new_group_button"], ["$responsive", "x<750:new_group_button_small"]]
+            "node_tags": [["innerHTML", "Su quale gruppo vuoi lavorare?"],["className","generic_label new_group_label"]]
+          },
+          {
+            "node_type": "select",
+            "node_tags": [["id","group_select"],["className","generic_select new_group_select"], ["$responsive", "x<750:new_group_select_small"]],
+            "node_afterinit": "initGroupSelect"
+          },
+          {
+            "node_type": "div",
+            "node_tags": [["innerHTML", "Crea un nuovo gruppo"],["className","generic_button new_group_button"], ["$responsive", "x<750:new_group_button_small"], ["onclick", "createNewGroup()"]]
           },
           {
             "node_type": "table",
-            "node_tags": [["className", "home_squares_wrapper"]],
+            "node_styles": [["display","none"]],
+            "node_tags": [["id", "data_table"],["className", "home_squares_wrapper"]],
             "node_childs": [
                 {
                   "node_type": "tr",
@@ -114,30 +124,6 @@ var App_Pages = [
                       "node_type": "td",
                       "node_tags": [["className","home_left_square"], ["$responsive", "x<750:home_left_square_small"]],
                       "node_childs": [
-
-
-                            {
-                              "node_type": "div",
-                              "node_tags": [["innerHTML", "Su quale gruppo vuoi lavorare?"],["className","generic_label"]]
-                            },
-                            {
-                              "node_type": "select",
-                              "node_tags": [["className","generic_select"]],
-                              "node_childs": [
-                                {
-                                  "node_type": "option",
-                                  "node_tags": [["innerHTML","gruppo1"]],
-                                },
-                                {
-                                  "node_type": "option",
-                                  "node_tags": [["innerHTML","gruppo2"]],
-                                },
-                                {
-                                  "node_type": "option",
-                                  "node_tags": [["innerHTML","gruppo3"]],
-                                }
-                              ]
-                            },
                             {
                               "node_type": "div",
                               "node_tags": [["innerHTML", "Inserisci le tue date"],["className","generic_button"]]
@@ -150,8 +136,6 @@ var App_Pages = [
                               "node_type": "div",
                               "node_tags": [["innerHTML", "Cancella questo gruppo"],["className","generic_button"]]
                             }
-
-
                       ]
                     },
                     {
@@ -465,4 +449,40 @@ async function performResetPasswordEmailRequest() {
       navigate('login');
     }
   }
+}
+
+function getUserGroups(){
+  let groups = storageGetItem("groups");
+  if(isNullOrUndefined(groups)){
+    groups = [];
+    storageSetItem("groups",groups);
+  }
+  return groups;
+}
+
+function initGroupSelect() {
+  let select = document.getElementById("group_select");
+  let groups = getUserGroups();
+  for(let i = 0; i < groups.length;i++){
+    let group = groups[i];
+    let option = document.getElementById("option");
+    option.innerHTML = group["description"];
+    option.value = group["id"];
+    if(i == 0){
+      option.setAttribute("select","true");
+    }
+    select.appendChild(option);
+  }
+}
+
+function showGroupManagementSection() {
+  let section = document.getElementById("data_table");
+}
+
+function createNewGroup(){
+  stitchClient.openInputDialog("Inserisci i seguenti campi per creare un gruppo.", [{"title": "Nome del gruppo", "placeholder": "Nome"}, {"title": "Descrizione del gruppo", "placeholder": "Descrizione"}], ["","processNewGroupDialogClick(this)"]);
+}
+
+function processNewGroupDialogClick() {
+  console.log("ciao");
 }

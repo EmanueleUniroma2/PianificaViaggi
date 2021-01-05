@@ -26,11 +26,14 @@ function storageRemoveItem(name){
 }
 function storageGetItem(name){
   let el = localStorage.getItem(name);
-  if(!isNullOrUndefined(el)){
-    return JSON.parse(el);
-  }else{
-    return "";
+  try{
+    if(!isNullOrUndefined(el)){
+      return JSON.parse(el);
+    }
+  }catch(e){
+
   }
+  return null;
 }
 function storageSetItem(name, value){
   let ready_to_save = JSON.stringify(value);
@@ -161,7 +164,7 @@ var Stitch_FrameWork_EmbeddedStyles = ""+
 "}"+
 ".stitch_modal_button{"+
 "	display: inline-block;"+
-"  margin: 0 1em;"+
+"  margin: 0.5rem 1em;"+
 "  color: black;"+
 "  font-weight: bold;"+
 "  border: 1px solid;"+
@@ -210,7 +213,16 @@ var Stitch_FrameWork_EmbeddedStyles = ""+
 "	to {"+
 "		-moz-transform: rotate(360deg);"+
 "	}"+
-"}";
+"}"+
+".stitch_dialog_input_title{"+
+"  text-align: left;"+
+"  opacity: 0.7;"+
+"  border-top: 1px solid;"+
+"}"+
+".stitch_dialog_input{"+
+"  width: 80%;"+
+"  margin: 1rem 9;"+
+"}"
 
 
 /* stitch client for the backend */
@@ -887,9 +899,6 @@ class StitchAppClient {
 
     server = null;
 
-    // user ready to use variables
-    
-
     // used to dynamically resize some elements
     elementsRegisteredForDynamicResize = [];
 
@@ -979,7 +988,7 @@ class StitchAppClient {
     }
 
     /* base open dialog class (this uses the embedded stitch styles) */
-    openDialog(title, text, buttons, callbacks) {
+    openDialog(title, text, buttons, inputs, callbacks) {
 
         if (buttons == "alert") {
             buttons = ["Chiudi"];
@@ -989,6 +998,9 @@ class StitchAppClient {
         }
         if (buttons == "confirm_cancellable") {
             buttons = ["Si", "No"];
+        }
+        if (buttons == "input") {
+            buttons = ["Annulla", "Procedi"];
         }
 
         if (isNullOrUndefined(title)) {
@@ -1000,10 +1012,12 @@ class StitchAppClient {
         if (isNullOrUndefined(buttons)) {
             buttons = ["Chiudi"];
         }
+        if(isNullOrUndefined(inputs)){
+          inputs = [];
+        }
         if (isNullOrUndefined(callbacks)) {
             callbacks = [];
         }
-
         if (buttons.length == 0) {
             buttons = ["Chiudi"];
         }
@@ -1018,38 +1032,49 @@ class StitchAppClient {
         let inner_dialog = "<div class=\"stitch_modal_title\">" + title + "</div>" + "<div class=\"stitch_modal_text\">" + this.generateMultilineHTMLfromString(text) + "</div>\n";
         inner_dialog += "<div style=\"margin-top: 0.5rem; text-align: end;\">\n";
 
+        for (let i = 0; i < inputs.length; i++) {
+          inner_dialog += "<div class='stitch_dialog_input_title'>"+inputs[i]["title"]+"</div>\n";
+          inner_dialog += "<input class='stitch_dialog_input' placeholder='"+inputs[i]["placeholder"]+"'></input>\n";
+        }
+
+        inner_dialog += "<br>";
+
+        for (let i = 0; i < buttons.length; i++) {
+            inner_dialog += "<div class=\"stitch_modal_button\" id='stitch_dialog_button_"+i.toString()+"'>" + buttons[i] + "</div>\n";
+        }
+
+        inner_dialog += "</div>\n";
+        dialog.innerHTML = inner_dialog;
+        inkdrop.appendChild(dialog);
+        document.body.appendChild(inkdrop);
+
         for (let i = 0; i < buttons.length; i++) {
 
+            let button = document.getElementById("stitch_dialog_button_"+i.toString());
             let callback = callbacks.length > i ? callbacks[i] : "";
-
-            let callback_inline = "(document.getElementsByClassName('stitch_modal_dialog_inkdrop')[0]).parentNode.removeChild((document.getElementsByClassName('stitch_modal_dialog_inkdrop')[0])); ";
+            let callback_inline = "(document.getElementsByClassName('stitch_modal_dialog_inkdrop')[0]).parentNode.removeChild((document.getElementsByClassName('stitch_modal_dialog_inkdrop')[0]));";
 
             if(!isVoidString(callback)){
-              callback_inline += callback+"();"
+              callback_inline += " " + callback+";"
             }
-
-            inner_dialog += "<div class=\"stitch_modal_button\" onclick="+callback_inline+">" + buttons[i] + "</div>\n";
+            button.setAttribute("onclick", callback_inline);
         }
-        inner_dialog += "</div>\n";
-
-        dialog.innerHTML = inner_dialog;
-
-        inkdrop.appendChild(dialog);
-
-        document.body.appendChild(inkdrop);
 
         setTimeout(this.fadeInDialog, 50);
     }
 
     /* some dialog shortcuts*/
+    openInputDialog(body, inputs, callbacks) {
+        this.openDialog("Dati richiesti", body, "input", inputs, callbacks);
+    }
     openConfirmDialog(body, callbacks) {
-        this.openDialog("Confermare azione", body, "confirm", callbacks);
+        this.openDialog("Confermare azione", body, "confirm", null, callbacks);
     }
     openInfoDialog(body) {
-        this.openDialog("", body, "alert", null);
+        this.openDialog("", body, "alert", null, null);
     }
     openAlertDialog(body) {
-        this.openDialog("Nota", body, "alert", null);
+        this.openDialog("Nota", body, "alert", null, null);
     }
 
     // used to print multiline html text without using stuff like "white-space:pre" (wich gives errors on IOS)
@@ -1236,6 +1261,7 @@ class StitchAppClient {
 
         let nodeType = element["node_type"];
         let nodeTags = element["node_tags"];
+        let nodeStyles = element["node_styles"];
         let childs = element["node_childs"];
         let afterInit = element["node_afterinit"];
 
@@ -1243,6 +1269,13 @@ class StitchAppClient {
 
         if(!isNullOrUndefined(childs)){
           this.buildPage(last_created, childs);
+        }
+
+        if(!isNullOrUndefined(nodeStyles)){
+          for(let j = 0; j < nodeStyles.length; j++){
+            let style = nodeStyles[j];
+            last_created.style[style[0]] = style[1];
+          }
         }
 
         if(!isVoidString(afterInit)){
