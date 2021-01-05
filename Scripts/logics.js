@@ -56,6 +56,20 @@ var App_Pages = [
                 "node_tags": [["className", "inline_link_label"], ["innerHTML", "registrati!"], ["onclick", "navigate('register')"]]
               },
             ]
+          },
+          {
+            "node_type": "br",
+            "node_tags": [],
+          },
+          {
+            "node_type": "div",
+            "node_tags": [["className", "inline_with_link_text"], ["innerHTML", "Non riesci ad accedere?"]],
+            "node_childs": [
+              {
+                "node_type": "div",
+                "node_tags": [["className", "inline_link_label"], ["innerHTML", "resetta la tua password!"], ["onclick", "navigate('request_password_reset')"]]
+              },
+            ]
           }
         ]
       }
@@ -223,6 +237,34 @@ var App_Pages = [
           {
             "node_type": "div",
             "node_tags": [["className", "button"], ["onclick", "navigate('login')"], ["innerHTML", "VAI AL LOGIN"]]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "request_password_reset",
+    "requiresAuth": false,
+    "content": [
+      {
+        "node_type":"div",
+        "node_tags": [["className","form_page"]],
+        "node_childs": [
+          {
+            "node_type": "div",
+            "node_tags": [["className", "topbar_specification"], ["innerHTML", "Se non riesci ad accedere con il tuo account, inserisci la tua email. Se esiste un account registrato con quella email, ti invieremo una email con il link con cui potrai reimpostare la password."]]
+          },
+          {
+            "node_type": "input",
+            "node_tags" : [["id","reset_password_email"], ["type","text"], ["className", "input_entry"], ["placeholder", "Email"]]
+          },
+          {
+            "node_type": "div",
+            "node_tags": [["className", "button"], ["onclick", "performResetPasswordEmailRequest();"], ["innerHTML", "INVIA EMAIL"]]
+          },
+          {
+            "node_type": "div",
+            "node_tags": [["className", "button"], ["onclick", "navigate('login')"], ["innerHTML", "ANNULLA"]]
           }
         ]
       }
@@ -401,5 +443,10 @@ function openToolbarMenu(targetNode) {
 }
 
 async function performResetPasswordEmailRequest() {
-  await stitchClient.sendResetPasswordEmail("");
+  let form_email = getInputValue("reset_password_email");
+  if(await stitchClient.sendResetPasswordEmail(form_email) == null){
+    if(!isVoidString(form_email)){
+      navigate('login');
+    }
+  }
 }

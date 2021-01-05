@@ -1383,6 +1383,16 @@ class StitchAppClient {
         email = this.server.email;
       }
 
+      if(isVoidString(email)){
+        this.openAlertDialog("Il campo Email non può essere vuoto");
+        return "error";
+      }
+
+      if(!validateEmail(email)){
+        this.openAlertDialog("Il campo Email deve contenere un indirizzo email valido");
+        return "error";
+      }
+
       this.toggleAPISpinner(true);
       return this.handleApiResult(await this.server.sendResetPasswordEmail(email), "Abbiamo inviato una email di reset password al tuo indirizzo. Clicca nel link dell'email per completare il reset della password.");
     }
