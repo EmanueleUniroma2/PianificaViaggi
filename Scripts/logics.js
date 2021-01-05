@@ -318,14 +318,16 @@ function performEmailResend() {
   stitchClient.resendConfirmationEmail(email);
 }
 
-function performPasswordReset(){
+async function performPasswordReset(){
   let password = getInputValue("reset_password");
   let password_2 = getInputValue("reset_password_2");
-  stitchClient.resetPassword(password,password_2);
+  if(await stitchClient.resetPassword(password,password_2) == null){
+    navigate('login');
+  }
 }
 
-function performUserConfirmation() {
-  if(stitchClient.confirmUser() == null){
+async function performUserConfirmation() {
+  if(await stitchClient.confirmUser() == null){
     navigate('login');
   }
 }
