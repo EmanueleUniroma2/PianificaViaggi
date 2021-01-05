@@ -112,45 +112,59 @@ var App_Pages = [
             "node_tags": [["innerHTML", "Crea un nuovo gruppo"],["className","generic_button new_group_button"], ["$responsive", "x<750:new_group_button_small"], ["onclick", "createNewGroup()"]]
           },
           {
-            "node_type": "table",
+            "node_type": "div",
             "node_styles": [["display","none"]],
-            "node_tags": [["id", "data_table"],["className", "home_squares_wrapper"]],
+            "node_tags": [["id", "home_page_wrapper"]],
             "node_childs": [
-                {
-                  "node_type": "tr",
-                  "node_tags": [],
-                  "node_childs": [
+              {
+                "node_type": "div",
+                "node_tags": [["id", "home_group_title"],["className", "home_group_title"]],
+              },
+              {
+                "node_type": "div",
+                "node_tags": [["id", "home_group_description"],["className", "home_group_description"]],
+              },
+              {
+                "node_type": "table",
+                "node_tags": [["className", "home_squares_wrapper"]],
+                "node_childs": [
                     {
-                      "node_type": "td",
-                      "node_tags": [["className","home_left_square"], ["$responsive", "x<750:home_left_square_small"]],
-                      "node_childs": [
-                            {
-                              "node_type": "div",
-                              "node_tags": [["innerHTML", "Inserisci le tue date"], ["onclick", "insertMyDatesForCurrentGroup()"],["className","generic_button"]]
-                            },
-                            {
-                              "node_type": "div",
-                              "node_tags": [["innerHTML", "Invita su questo gruppo"], ["onclick", "inviteOnCurrentGroup()"], ["className","generic_button"]]
-                            },
-                            {
-                              "node_type": "div",
-                              "node_tags": [["innerHTML", "Cancella questo gruppo"], ["onclick", "deleteCurrentGroup()"] ,["className","generic_button"]]
-                            }
-                      ]
-                    },
-                    {
-                      "node_type": "td",
-                      "node_tags": [["className","home_right_square"],  ["$responsive", "x<750:home_right_square_small"]],
+                      "node_type": "tr",
+                      "node_tags": [],
                       "node_childs": [
                         {
-                          "node_type": "div",
-                          "node_tags": [["innerHTML", "Sezione destra"]]
+                          "node_type": "td",
+                          "node_tags": [["className","home_left_square"], ["$responsive", "x<750:home_left_square_small"]],
+                          "node_childs": [
+                                {
+                                  "node_type": "div",
+                                  "node_tags": [["innerHTML", "Inserisci le tue date"], ["onclick", "insertMyDatesForCurrentGroup()"],["className","generic_button"]]
+                                },
+                                {
+                                  "node_type": "div",
+                                  "node_tags": [["innerHTML", "Invita su questo gruppo"], ["onclick", "inviteOnCurrentGroup()"], ["className","generic_button"]]
+                                },
+                                {
+                                  "node_type": "div",
+                                  "node_tags": [["innerHTML", "Cancella questo gruppo"], ["onclick", "deleteCurrentGroup()"] ,["className","generic_button"]]
+                                }
+                          ]
+                        },
+                        {
+                          "node_type": "td",
+                          "node_tags": [["className","home_right_square"],  ["$responsive", "x<750:home_right_square_small"]],
+                          "node_childs": [
+                            {
+                              "node_type": "div",
+                              "node_tags": [["innerHTML", "Sezione destra"]]
+                            }
+                          ]
                         }
                       ]
                     }
                   ]
-                }
-              ]
+              }
+            ]
           }
         ]
       }
@@ -468,6 +482,7 @@ function initGroupSelect() {
   for(let i = 0; i < groups.length;i++){
     let group = groups[i];
     let option = document.createElement("option");
+    option.className = "group_select_option";
     option.innerHTML = group["title"];
     option.value = group["id"];
     if(i == 0){
@@ -484,7 +499,12 @@ function initGroupSelect() {
 function changeGroup() {
 
   let selected = document.getElementById("group_select").value;
-  let section = document.getElementById("data_table").style.display = "block";
+  let section = document.getElementById("home_page_wrapper").style.display = "block";
+
+  let current_group = getSelectedGroup();
+
+  document.getElementById("home_group_title").innerHTML = current_group["title"];
+  document.getElementById("home_group_description").innerHTML = current_group["description"];
 
 }
 
@@ -510,7 +530,7 @@ function processNewGroupDialogClick() {
   };
 
   let current_groups = getUserGroups();
-  current_groups.push(group);
+  current_groups.unshift(group);
   storageSetItem("groups",current_groups);
 
   stitchClient.pageNavigate();
@@ -546,6 +566,17 @@ function deleteCurrentGroupConfirmed() {
       return;
     }
   }
+}
+
+function getSelectedGroup() {
+  let selected = document.getElementById("group_select").value;
+  let groups = getUserGroups();
+  for(let i = 0; i < groups.length;i++){
+    if(groups[i]["id"] == selected){
+      return groups[i];
+    }
+  }
+  return null;
 }
 
 // credits: https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid

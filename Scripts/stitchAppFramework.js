@@ -850,6 +850,10 @@ async fullLoginFetchSequence(email, password, collection){
       }
     });
 
+    for(let i = 0; i < this.sync_models.length; i++){
+      localStorage.removeItem(this.sync_models[i]);
+    }
+
     this.email = "";
     this.password = "";
   }

@@ -96,6 +96,9 @@ html{
   width: 41.5%;
   margin-bottom: 1rem;
 }
+.group_select_option{
+  font-size: 1.1rem;
+}
 .new_group_button{
   margin: 0 1rem !important;
   width: 40.5%;
@@ -260,4 +263,17 @@ background: rgba(0,0,0,0.2);
   margin-top: 10rem;
   margin-bottom: 2rem;
   color: #27282e;
+}
+.home_group_title{
+  margin-top: 1rem;
+  padding: 0.5rem;
+  padding-left: 2rem;
+  font-size: 1.5rem;
+  background: linear-gradient(45deg, rgba(0,0,0,0.2), transparent);
+}
+.home_group_description{
+  padding: 0.5rem;
+  padding-left: 2rem;
+  padding-top: 0.2rem;
+  background: linear-gradient(45deg, rgba(255,255,255,0.2), transparent);
 }
