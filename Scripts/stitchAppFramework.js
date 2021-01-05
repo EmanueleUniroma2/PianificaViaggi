@@ -4,6 +4,14 @@ var lastInitedAppClient = null;
 var IsDeveloper = false;
 var singletonRegisteredEventListeners = [];
 
+function removeElementFromList(list, element) {
+  let index = list.indexOf(element);
+  if (index > -1) {
+    list.splice(index, 1);
+  }
+  return list;
+}
+
 function singletonAddEventListener(target, eventName, callBack,flag){
   if(singletonRegisteredEventListeners.indexOf(eventName)){
     singletonRegisteredEventListeners.push(eventName);
@@ -48,7 +56,6 @@ function validateEmail(mail){
 function isNullOrUndefined(obj) {
     return (obj == undefined || obj == null || obj == "undefined");
 }
-
 function isVoidString(str){
   return isNullOrUndefined(str) || str == "";
 }
@@ -799,11 +806,6 @@ async fullLoginFetchSequence(email, password, collection){
 }
 
 
-  // get stitch client user id
-  authenticatedId(){
-    return this.client.auth.user.id;
-  }
-
   // check user is autenticated
   isAuthenticated(){
     try{
@@ -899,6 +901,9 @@ class StitchAppClient {
 
     server = null;
 
+    // last dialog output
+    lastDialogOutput = [];
+
     // used to dynamically resize some elements
     elementsRegisteredForDynamicResize = [];
 
@@ -990,19 +995,17 @@ class StitchAppClient {
     /* base open dialog class (this uses the embedded stitch styles) */
     openDialog(title, text, buttons, inputs, callbacks) {
 
+        let dialog_type = buttons;
+
         if (buttons == "alert") {
             buttons = ["Chiudi"];
         }
         if (buttons == "confirm") {
-            buttons = ["Si", "No"];
-        }
-        if (buttons == "confirm_cancellable") {
-            buttons = ["Si", "No"];
+            buttons = ["No","Si"];
         }
         if (buttons == "input") {
             buttons = ["Annulla", "Procedi"];
         }
-
         if (isNullOrUndefined(title)) {
             title = "Messaggio dal sito";
         }
@@ -1052,7 +1055,7 @@ class StitchAppClient {
 
             let button = document.getElementById("stitch_dialog_button_"+i.toString());
             let callback = callbacks.length > i ? callbacks[i] : "";
-            let callback_inline = "(document.getElementsByClassName('stitch_modal_dialog_inkdrop')[0]).parentNode.removeChild((document.getElementsByClassName('stitch_modal_dialog_inkdrop')[0]));";
+            let callback_inline = "lastInitedAppClient.dialogDispose('"+buttons[i]+"','"+dialog_type+"');";
 
             if(!isVoidString(callback)){
               callback_inline += " " + callback+";"
@@ -1063,6 +1066,25 @@ class StitchAppClient {
         setTimeout(this.fadeInDialog, 50);
     }
 
+    dialogDispose(button_name, dialog_type){
+
+      let dialog = document.getElementById("modal_ink_drop");
+
+      if(dialog_type == "confirm"){
+        this.lastDialogOutput = !(button_name.toLowerCase() == "no" || button_name.toLowerCase() == "cancel");
+      }
+      else{
+        let inputs = document.getElementsByClassName("stitch_dialog_input");
+        let values = [];
+        for(let i = 0; i < inputs.length;i++){
+          values.push(inputs[i].value);
+        }
+        this.lastDialogOutput = values;
+      }
+
+      dialog.parentNode.removeChild(dialog);
+    }
+
     /* some dialog shortcuts*/
     openInputDialog(body, inputs, callbacks) {
         this.openDialog("Dati richiesti", body, "input", inputs, callbacks);
@@ -1071,7 +1093,7 @@ class StitchAppClient {
         this.openDialog("Confermare azione", body, "confirm", null, callbacks);
     }
     openInfoDialog(body) {
-        this.openDialog("", body, "alert", null, null);
+        this.openDialog("Informazione", body, "alert", null, null);
     }
     openAlertDialog(body) {
         this.openDialog("Nota", body, "alert", null, null);
@@ -1439,10 +1461,10 @@ class StitchAppClient {
                     }
                   }
 
-                  if (keyname != "onclick") {
+                  if (keyname.substring(0,2) != "on") {
                       el[keyname] = content;
                   } else {
-                      el.setAttribute("onclick",content);
+                      el.setAttribute(keyname,content);
                   }
                 }
             }
@@ -1605,6 +1627,11 @@ class StitchAppClient {
 
         this.pageNavigate();
         lastInitedAppClient = this;
+    }
+
+    // get stitch client user id
+    getAuthenticatedId(){
+      return this.server.stitch_actual_client.auth.user.id;
     }
 
     /* exported functions from inner class */

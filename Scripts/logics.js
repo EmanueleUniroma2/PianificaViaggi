@@ -104,7 +104,7 @@ var App_Pages = [
           },
           {
             "node_type": "select",
-            "node_tags": [["id","group_select"],["className","generic_select new_group_select"], ["$responsive", "x<750:new_group_select_small"]],
+            "node_tags": [["id","group_select"],["onchange", "changeGroup()"], ["className","generic_select new_group_select"], ["$responsive", "x<750:new_group_select_small"]],
             "node_afterinit": "initGroupSelect"
           },
           {
@@ -126,15 +126,15 @@ var App_Pages = [
                       "node_childs": [
                             {
                               "node_type": "div",
-                              "node_tags": [["innerHTML", "Inserisci le tue date"],["className","generic_button"]]
+                              "node_tags": [["innerHTML", "Inserisci le tue date"], ["onclick", "insertMyDatesForCurrentGroup()"],["className","generic_button"]]
                             },
                             {
                               "node_type": "div",
-                              "node_tags": [["innerHTML", "Invita su questo gruppo"],["className","generic_button"]]
+                              "node_tags": [["innerHTML", "Invita su questo gruppo"], ["onclick", "inviteOnCurrentGroup()"], ["className","generic_button"]]
                             },
                             {
                               "node_type": "div",
-                              "node_tags": [["innerHTML", "Cancella questo gruppo"],["className","generic_button"]]
+                              "node_tags": [["innerHTML", "Cancella questo gruppo"], ["onclick", "deleteCurrentGroup()"] ,["className","generic_button"]]
                             }
                       ]
                     },
@@ -461,22 +461,31 @@ function getUserGroups(){
 }
 
 function initGroupSelect() {
+
   let select = document.getElementById("group_select");
   let groups = getUserGroups();
+
   for(let i = 0; i < groups.length;i++){
     let group = groups[i];
-    let option = document.getElementById("option");
-    option.innerHTML = group["description"];
+    let option = document.createElement("option");
+    option.innerHTML = group["title"];
     option.value = group["id"];
     if(i == 0){
       option.setAttribute("select","true");
     }
     select.appendChild(option);
   }
+
+  if(groups.length > 0){
+    setTimeout(changeGroup,100);
+  }
 }
 
-function showGroupManagementSection() {
-  let section = document.getElementById("data_table");
+function changeGroup() {
+
+  let selected = document.getElementById("group_select").value;
+  let section = document.getElementById("data_table").style.display = "block";
+
 }
 
 function createNewGroup(){
@@ -484,5 +493,65 @@ function createNewGroup(){
 }
 
 function processNewGroupDialogClick() {
-  console.log("ciao");
+  let result = stitchClient.lastDialogOutput;
+
+  for(let i = 0; i < result.length; i++){
+    if(isVoidString(result[i])){
+      stitchClient.openAlertDialog("Impossibile procedere. Tutti i campi devono essere riempiti.");
+      return;
+    }
+  }
+
+  let group = {
+    "title": result[0],
+    "description": result[1],
+    "owner_id": stitchClient.getAuthenticatedId(),
+    "id": uuidv4()
+  };
+
+  let current_groups = getUserGroups();
+  current_groups.push(group);
+  storageSetItem("groups",current_groups);
+
+  stitchClient.pageNavigate();
+
+  setTimeout(function(){
+    stitchClient.openInfoDialog("Gruppo creato con successo: <strong>"+result[0]+"</strong>");
+  }, 200);
+}
+
+function insertMyDatesForCurrentGroup() {
+  let selected = document.getElementById("group_select").value;
+
+}
+function inviteOnCurrentGroup() {
+  let selected = document.getElementById("group_select").value;
+
+}
+function deleteCurrentGroup() {
+  stitchClient.openConfirmDialog("Vuoi davvero eliminare questo gruppo?" , ["","deleteCurrentGroupConfirmed()"]);
+}
+function deleteCurrentGroupConfirmed() {
+  let selected = document.getElementById("group_select").value;
+  let groups = getUserGroups();
+
+  for(let i = 0; i < groups.length;i++){
+    if(groups[i]["id"] == selected){
+      let ereasing = groups[i]["title"];
+      let updated = removeElementFromList(groups,groups[i]);
+
+      storageSetItem("groups",updated);
+      stitchClient.pageNavigate();
+      stitchClient.openInfoDialog("Gruppo eliminato con successo: <strong>"+ereasing+"</strong>");
+      return;
+    }
+  }
+}
+
+// credits: https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
+function uuidv4() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
 }
