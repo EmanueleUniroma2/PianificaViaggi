@@ -11,7 +11,7 @@ var App_Pages = [
         "node_childs": [
           {
             "node_type": "img",
-            "node_tags": [["className","travel_gif"], ["src","airplane.gif"]],
+            "node_tags": [["className","travel_gif"], ["src","./Assets/airplane.gif"]],
           },
           {
             "node_type": "div",
@@ -75,13 +75,17 @@ var App_Pages = [
             "node_childs": [
               {
                 "node_type": "div",
-                "node_tags": [["className", "toolbar_label"], ["innerHTML", "Pianifica e Viaggia!"]]
+                "node_tags": [["$responsive", "x<600:toolbar_label_small ;x<inf:toolbar_label"], ["className", "toolbar_label"], ["innerHTML", "Pianifica e Viaggia!"]]
               },
               {
                 "node_type": "div",
                 "node_tags": [["innerHTML", "$call_getLoggedEmail"], ["className","toolbar_button"], ["onclick","openToolbarMenu(this)"]]
               }
             ]
+          },
+          {
+            "node_type": "div",
+            "node_tags": [["innerHTML", "Crea un nuovo gruppo"],["className","generic_button new_group_button"], ["$responsive", "x<750:new_group_button_small"]]
           },
           {
             "node_type": "table",
@@ -93,7 +97,7 @@ var App_Pages = [
                   "node_childs": [
                     {
                       "node_type": "td",
-                      "node_tags": [["className","home_left_square"]],
+                      "node_tags": [["className","home_left_square"], ["$responsive", "x<750:home_left_square_small"]],
                       "node_childs": [
 
 
@@ -129,10 +133,6 @@ var App_Pages = [
                             },
                             {
                               "node_type": "div",
-                              "node_tags": [["innerHTML", "Crea un nuovo gruppo"],["className","generic_button"]]
-                            },
-                            {
-                              "node_type": "div",
                               "node_tags": [["innerHTML", "Cancella questo gruppo"],["className","generic_button"]]
                             }
 
@@ -141,7 +141,7 @@ var App_Pages = [
                     },
                     {
                       "node_type": "td",
-                      "node_tags": [["className","home_right_square"]],
+                      "node_tags": [["className","home_right_square"],  ["$responsive", "x<750:home_right_square_small"]],
                       "node_childs": [
                         {
                           "node_type": "div",
@@ -264,7 +264,7 @@ var App_Pages = [
 
 
 // init here db name and realm app name
-const version_label = "Versione 0.3 (non aperto al pubblico)";
+const version_label = "Versione 0.4 (non aperto al pubblico)";
 const app_name = "pianificaeviaggia-ljhog";
 const db_name = "guitar_online_user_data";
 const stitchClient = new StitchAppClient(app_name, db_name);
@@ -276,11 +276,14 @@ function navigate(page){
 function boot(){
   stitchClient.registerAppTargetNodeId("page_content");
   stitchClient.registerAppPages(App_Pages);
+  //stitchClient.setPageResizeHandle("handlePageResize");
   stitchClient.boot();
 
   setVersion();
   loginSetup();
 }
+
+/*function handlePageResize() {} */
 
 function loginSetup(){
   if(stitchClient.getUrlSection(1) == "login"){
@@ -362,7 +365,7 @@ async function performLogout() {
 }
 
 function getLoggedEmail(){
-  return stitchClient.loggedEmail();
+  return stitchClient.loggedEmail().split("@")[0];
 }
 
 function openToolbarMenu(targetNode) {

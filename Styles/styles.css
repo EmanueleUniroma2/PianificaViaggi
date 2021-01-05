@@ -83,6 +83,15 @@ html{
   width: 100%;
   margin: 0.5rem 0;
 }
+.new_group_button{
+  margin: 1rem !important;
+  width: 40.5%;
+  display: inline-block;
+  min-width: 20.6rem;
+}
+.new_group_button_small{
+  width: 82% !important;
+}
 .generic_button{
   background: rgba(0,0,0,0.1);
   border: 2px solid rgba(0,0,0,0.2);
@@ -99,7 +108,7 @@ html{
   background: rgba(0,0,0,0.3);
 }
 .home_squares_wrapper{
-  padding-top: 3rem;
+  padding-top: 1rem;
   width: 100%;
 }
 .home_left_square{
@@ -111,6 +120,9 @@ html{
   display: inline-block;
   min-width: 20rem;
 }
+.home_left_square_small{
+  width: 80% !important;
+}
 .home_right_square{
   background: rgba(255,255,255,0.4);
   margin: 1rem;
@@ -119,6 +131,9 @@ html{
   width: 40%;
   display: inline-block;
   min-width: 20rem;
+}
+.home_right_square_small{
+  width: 80% !important;
 }
 .version{
   margin: 1rem;
@@ -171,11 +186,21 @@ background: rgba(0,0,0,0.2);
 }
 .toolbar_label{
   display: inline-block;
-  width: 50%;
-  font-size: 1.3rem;
+  width: 45%;
+  font-size: 1.1rem;
   background: linear-gradient(45deg, white, 30%, #ffffff00, 90%, #ffffff00, 100%, #ffffff00);
   padding: 0.2rem 1rem;
   border-radius: 0.6rem;
+  font-weight: bold;
+}
+.toolbar_label_small{
+  display: inline-block;
+  width: 36%;
+  font-size: 1rem;
+  background: linear-gradient(45deg, white, 30%, #ffffff00, 90%, #ffffff00, 100%, #ffffff00);
+  padding: 0.2rem 1rem;
+  border-radius: 0.6rem;
+  font-weight: bold;
 }
 .toolbar_button{
   display: inline-block;

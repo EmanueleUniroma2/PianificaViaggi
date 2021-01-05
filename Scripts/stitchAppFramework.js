@@ -1,10 +1,30 @@
 
+
 var lastInitedAppClient = null;
+var singletonRegisteredEventListeners = [];
+
+function singletonAddEventListener(target, eventName, callBack,flag){
+  if(singletonRegisteredEventListeners.indexOf(eventName)){
+    singletonRegisteredEventListeners.push(eventName);
+    target.addEventListener(eventName, callBack,flag);
+  }
+}
+
+function pageHasResized(){
+  if(!isNullOrUndefined(lastInitedAppClient)){
+    lastInitedAppClient.pageResizeHandle();
+  }
+}
+function pageHasChanged(){
+  if(!isNullOrUndefined(lastInitedAppClient)){
+    lastInitedAppClient.pageNavigate();
+  }
+}
+
 
 function storageRemoveItem(name){
   localStorage.removeItem(name);
 }
-
 function storageGetItem(name){
   let el = localStorage.getItem(name);
   if(!isNullOrUndefined(el)){
@@ -19,12 +39,6 @@ function storageSetItem(name, value){
 }
 function clearStorage(){
   localStorage.clear();
-}
-
-function pageHasChanged(){
-  if(!isNullOrUndefined(lastInitedAppClient)){
-    lastInitedAppClient.pageNavigate();
-  }
 }
 function validateEmail(mail){
   return (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(mail));
@@ -673,6 +687,9 @@ class StitchAppClient {
 
     server = null;
 
+    // used to dynamically resize some elements
+    elementsRegisteredForDynamicResize = [];
+
     // used to handle page navigation warings like (save before leave this page)
     confirm_navigation_level = 0;
 
@@ -682,6 +699,9 @@ class StitchAppClient {
     // the registered app pages
     appPages = [];
 
+    // page resize callback
+    pageResizedCallbackName = null;
+
     constructor(app_name, db_name){
 
       if(isVoidString(app_name) || isVoidString(db_name)){
@@ -689,6 +709,25 @@ class StitchAppClient {
       }
 
       this.server = new StitchServerClient(app_name, db_name)
+    }
+
+    // set the page resized
+    setPageResizeHandle(resizePageHandlerFunctionName){
+      this.pageResizedCallbackName = resizePageHandlerFunctionName;
+    }
+
+    // call the callback for resized page if was defined
+    pageResizeHandle(){
+
+      // handle resize of elements
+      for(let i = 0; i < this.elementsRegisteredForDynamicResize.length;i++){
+        this.resizeDynamicElement(this.elementsRegisteredForDynamicResize[i]);
+      }
+
+      // if a page resize callback has been defined, call it
+      if(!isVoidString(this.pageResizedCallbackName)){
+        window[this.pageResizedCallbackName]();
+      }
     }
 
     // setters for above status variables
@@ -947,6 +986,8 @@ class StitchAppClient {
     // inner callback for page navigation
     pageNavigateInner() {
 
+        this.elementsRegisteredForDynamicResize = [];
+
         let page = this.getUrlSection(1);
 
         let page_no_args = page.split("?")[0];
@@ -958,6 +999,9 @@ class StitchAppClient {
         }else{
           this.showLockedPage();
         }
+
+        // handle resize specific logics once
+        this.pageResizeHandle();
     }
 
     // refresh the current page based on url #-navigation
@@ -1101,28 +1145,156 @@ class StitchAppClient {
                 let keyname = moreFlags[i][0];
                 let content = moreFlags[i][1];
 
-                // you can init a flag with a '$call_' to call a function named as
-                // the rest of the string e.g: $call_foo will call foo() and init content with the
-                // returned value
-                if(content.substring(0,"$call_".length) == "$call_"){
-                  try{
-                    content = window[content.substring("$call_".length)]();
-                  }catch(e){
-                    content = "";
+                // special flag used to register an element to dynamic resizyng
+                if(keyname == "$responsive"){
+                  this.elementsRegisteredForDynamicResize.push(el);
+                  el.setAttribute('responsive', content);
+                }
+                // standard flags
+                else
+                {
+                  // you can init a flag with a '$call_' to call a function named as
+                  // the rest of the string e.g: $call_foo will call foo() and init content with the
+                  // returned value
+                  if(content.substring(0,"$call_".length) == "$call_"){
+                    try{
+                      content = window[content.substring("$call_".length)]();
+                    }catch(e){
+                      content = "";
+                    }
+                  }
+
+                  if (keyname != "onclick") {
+                      el[keyname] = content;
+                  } else {
+                      el.setAttribute("onclick",content);
                   }
                 }
-
-                if (keyname != "onclick") {
-                    el[keyname] = content;
-                } else {
-                    el.setAttribute("onclick",content);
-                }
-
             }
         }
 
         return el;
     }
+
+    // resize an element
+    resizeDynamicElement(target_element){
+
+      let responsive_directive = target_element.getAttribute("responsive");
+      let splitted_directions = responsive_directive.split(";");
+      let processed_directions = [];
+
+      for(let i = 0; i < splitted_directions.length;i++){
+
+        // example of directive string:  x<700:toolbar_label_small  (variable<bound:class_name)
+
+        let dir = splitted_directions[i].trim();
+
+        let directive_splittes = dir.split(":");
+        let boundary_section = directive_splittes[0];
+        let boundary_class = directive_splittes[1];
+
+        let boundary_section_elements = boundary_section.split("<");
+
+        let bound = boundary_section_elements[1].toLowerCase();
+        if(bound == "inf" || bound == "any"){
+          bound = "100000";
+        }
+
+        try{
+          let bound_as_int = +bound;
+          let direction = {
+            "variable" : boundary_section_elements[0].toLowerCase(),
+            "bound": bound,
+            "class": boundary_class
+          };
+          processed_directions.push(direction);
+        }catch(e){
+          console.error("Bad boundary set for element: " + dir);
+        }
+      }
+
+      let width = window.innerWidth;
+      let height = window.innerHeight;
+
+      processed_directions.sort((a, b) => {
+          return a["bound"] - b["bound"];
+      });
+
+      let x_was_set = false;
+      let y_was_set = false;
+
+      for(let i = 0; i < processed_directions.length;i++){
+
+        let fresh_cycle = true;
+        let processed_dir = processed_directions[i];
+
+        let boundary_limit = processed_dir["bound"];
+        let className = processed_dir["class"];
+
+        // x not set and classname can fit
+        if(fresh_cycle && !x_was_set && processed_dir["variable"] == "x" && width < boundary_limit){
+          this.classNameSmartToggle(target_element, className, true);
+          x_was_set = true;
+          fresh_cycle = false;
+        }
+        // x is set already, all other x rules must be unset
+        if(fresh_cycle && (x_was_set || width >= boundary_limit) && processed_dir["variable"] == "x"){
+          this.classNameSmartToggle(target_element, className, false);
+          fresh_cycle = false;
+        }
+        // y not set and classname can fit
+        if(fresh_cycle && !y_was_set && processed_dir["variable"] == "y" && height < boundary_limit){
+          this.classNameSmartToggle(target_element, className, true);
+          y_was_set = true;
+          fresh_cycle = false;
+        }
+        // y is set already, all other y rules must be unset
+        if(fresh_cycle && (y_was_set || height >= boundary_limit) && processed_dir["variable"] == "y"){
+          this.classNameSmartToggle(target_element, className, false);
+          fresh_cycle = false;
+        }
+      }
+    }
+
+
+    // toggler for class name with explicit toggle setter flag
+    classNameSmartToggle(element, class_label, toggle){
+
+      let class_name_fullstring = element.className;
+      let class_name_fulllist = class_name_fullstring.split(" ");
+
+      // add it
+      if(toggle){
+
+        // (do noting if already present)
+        if(class_name_fulllist.indexOf(class_label) != -1){
+          return;
+        }
+
+        class_name_fulllist.push(class_label);
+      }
+      // remove it
+      else{
+
+        // (do nothing if already missing)
+        if(class_name_fulllist.indexOf(class_label) == -1){
+          return;
+        }
+
+        for(let i = 0; i < class_name_fulllist.length; i++){
+          if(class_name_fulllist[i] == class_label){
+            class_name_fulllist[i] = "";
+          }
+        }
+      }
+
+      let filtered = class_name_fulllist.filter(function (el) {
+        return el != "";
+      });
+
+      element.className = filtered.join(" ");
+    }
+
 
     // navigate to the requested page on this website
     setNavigation(pagerequest) {
@@ -1142,13 +1314,17 @@ class StitchAppClient {
       return this.server.email;
     }
 
+
+
     // needed for any action to begin
     boot(){
 
         this.server.loadStoredCredentials();
 
+        singletonAddEventListener(window, 'resize', pageHasResized, false);
+        singletonAddEventListener(window, 'hashchange', pageHasChanged, false);
+
         if(lastInitedAppClient == null){
-          window.addEventListener('hashchange', pageHasChanged, false);
           this.injectStitchFrameworkCss();
         }
 
@@ -1199,7 +1375,7 @@ class StitchAppClient {
       }
 
       this.toggleAPISpinner(true);
-      return this.handleApiResult(await this.server.registerUser(email, password), "Abbiamo inviato una email di conferma al tuo indirizzo. Clicca nel link dell'email per completare la registrazione.");
+      return this.handleApiResult(await this.server.registerUser(email.toLowerCase(), password), "Abbiamo inviato una email di conferma al tuo indirizzo. Clicca nel link dell'email per completare la registrazione.");
     }
     async sendResetPasswordEmail(email){
 
@@ -1248,7 +1424,7 @@ class StitchAppClient {
       }
 
       this.toggleAPISpinner(true);
-      return this.handleApiResult(await this.server.login(email, password), null);
+      return this.handleApiResult(await this.server.login(email.toLowerCase(), password), null);
     }
     async logout(){
       this.toggleAPISpinner(true);
