@@ -319,7 +319,7 @@ function boot(){
   stitchClient.registerAppPages(App_Pages);
   stitchClient.setSyncModels(SyncModelsPrototypes);
   //stitchClient.setPageResizeHandle("handlePageResize");
-  stitchClient.boot();
+  stitchClient.boot(user_data_collection_name);
 
   setVersion();
   loginSetup();

@@ -46,6 +46,7 @@ function storageGetItem(name){
 function storageSetItem(name, value){
   let ready_to_save = JSON.stringify(value);
   localStorage.setItem(name, ready_to_save);
+  lastInitedAppClient.bewareStorageUpdate(name);
 }
 function clearStorage(){
   localStorage.clear();
@@ -919,6 +920,9 @@ class StitchAppClient {
     // page resize callback
     pageResizedCallbackName = null;
 
+    // set this variable to enable fast updates on a specific collection
+    defaultCollectionForDataUpdates = null;
+
     constructor(app_name, db_name){
 
       if(isVoidString(app_name) || isVoidString(db_name)){
@@ -1614,7 +1618,9 @@ class StitchAppClient {
 
 
     // needed for any action to begin
-    boot(){
+    boot(defaultDataCollection){
+
+        this.defaultCollectionForDataUpdates = defaultDataCollection;
 
         this.server.loadStoredCredentials();
 
@@ -1721,7 +1727,7 @@ class StitchAppClient {
       this.server.sync_models = [model_name];
 
       // this calls uses the global SYNC_MODELS to know which models should go on backend
-      let result = await deleteRemoteModel(collection);
+      let result = await this.deleteRemoteModel(collection);
 
       this.server.sync_models = was;
 
@@ -1736,11 +1742,32 @@ class StitchAppClient {
       this.server.sync_models = [model_name];
 
       // this calls uses the global SYNC_MODELS to know which models should go on backend
-      let result = await updateRemoteModel(collection);
+      let result = await this.updateRemoteModel(collection);
 
       this.server.sync_models = was;
 
       return result;
+    }
+
+
+    // if the storage is updated, the client is notified
+    // then the client must check if the storage updated an item
+    // registered for syncking. If yes, synck it
+    bewareStorageUpdate(keyName){
+
+      if(isVoidString(this.defaultCollectionForDataUpdates)){
+        console.error("Could not synk storage update: defaultCollectionForDataUpdates is not set");
+      }
+
+      let synk_keys = this.server.sync_models;
+
+      for(let i = 0; i < synk_keys.length; i++){
+        if(synk_keys[i] == keyName){
+          this.updateSpecificModel(this.defaultCollectionForDataUpdates, keyName);
+          return;
+        }
+      }
+
     }
 
     // update all the remote models marked for sinkyng
