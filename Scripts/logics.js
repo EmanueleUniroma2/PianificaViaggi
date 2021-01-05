@@ -1,4 +1,5 @@
 
+
 var App_Pages = [
   {
     "name" : "login",
@@ -308,8 +309,13 @@ var App_Pages = [
 // init here db name and realm app name
 const version_label = "Versione 0.4 (non aperto al pubblico)";
 const app_name = "pianificaeviaggia-ljhog";
-const db_name = "guitar_online_user_data";
+const db_name = "pianifica_viaggi_user_data";
+const user_data_collection_name = "user_data";
+const user_requests_collection_name = "user_requests";
+
 const stitchClient = new StitchAppClient(app_name, db_name);
+
+var userSynckedModel = null;
 
 function navigate(page){
   stitchClient.setNavigation(page);
@@ -343,7 +349,7 @@ async function performLogin(){
     storageSetItem("password", password);
   }
 
-  if(await stitchClient.login(email, password) == null){
+  if(await stitchClient.fullLoginFetchSequence(email, password, user_data_collection_name) == null){
     navigate('home');
   }
 }

@@ -1,6 +1,7 @@
 
 
 var lastInitedAppClient = null;
+var IsDeveloper = false;
 var singletonRegisteredEventListeners = [];
 
 function singletonAddEventListener(target, eventName, callBack,flag){
@@ -20,8 +21,6 @@ function pageHasChanged(){
     lastInitedAppClient.pageNavigate();
   }
 }
-
-
 function storageRemoveItem(name){
   localStorage.removeItem(name);
 }
@@ -80,6 +79,41 @@ function setCheckboxIsChecked(id, setted){
     return null;
   }
 }
+function showBreadCrumb(msg) {
+
+    killBreadCrumb();
+
+    let d = document.createElement("div");
+    d.className = "stitch_bread_crumb";
+    // adjust style for lower res screens
+    if (window.innerWidth < 600) {
+        d.style.fontSize = "0.9em";
+        d.style.padding = "0.5em 1em";
+    }
+    d.innerHTML = msg;
+    document.body.appendChild(d);
+
+    setTimeout(function() {
+
+      let animation_duration = 700; //ms
+      d.style.transition = "opacity " + animation_duration + "ms linear";
+      d.style.opacity = "0";
+      setTimeout(function() {
+          killBreadCrumb();
+      }, animation_duration);
+
+    }, 3000);
+}
+function killBreadCrumb() {
+    let br_list = document.getElementsByClassName("stitch_bread_crumb");
+    if (br_list.length == 0) {
+        return;
+    }
+    let first = br_list[0];
+    first.parentElement.removeChild(first);
+}
+
+
 /*
   Just some embedded styles for dialogs and loading spinners
 */
@@ -90,10 +124,28 @@ var Stitch_FrameWork_EmbeddedStyles = ""+
 "    left: 0;"+
 "    width: 100vw;"+
 "    height: 100vh;"+
-"    z-index: 100;"+
+"    z-index: 50;"+
 "    background-color: rgba(0,0,0,0.8);"+
 "    opacity: 0;"+
 "    transition: opacity 0.3s ease-out;"+
+"}"+
+".stitch_bread_crumb {"+
+"    position: fixed;"+
+"    z-index: 100;"+
+"    bottom: 1em;"+
+"    left: 0;"+
+"    right: 0;"+
+"    background-color: rgba(0, 0, 0, 0.9);"+
+"    padding: 0.5em 1em;"+
+"    color: white;"+
+"    font-size: 1.1em;"+
+"    text-align: center;"+
+"    border-radius: 0.5em;"+
+"    margin: 0 auto;"+
+"    width: 1rem;"+
+"    width: min-content;"+
+"    max-width: 30em;"+
+"    min-width: 20em;"+
 "}"+
 ".stitch_modal_dialog{"+
 "	border-radius: 1rem;"+
@@ -164,6 +216,18 @@ var Stitch_FrameWork_EmbeddedStyles = ""+
 /* stitch client for the backend */
 class StitchServerClient{
 
+  // sync models
+  // this list must contain the list of items' keys from "localStorage" that will be syncked
+  // between each device and on the backend
+  // e.g:
+  // localStorage contains { "field_1": "value_1", "field_2": "value_2", "field_3": "value_3"}
+  //
+  // if you want to sync only field_1 and field_3 you can set this list as ["field_1","field_3"]
+  //
+  // this will automagically make the sync happen
+  //
+  // remember that only elements that are stored in the localStorage can be syncked
+  sync_models = [];
 
   // drivers
   db_name = "";
@@ -262,7 +326,7 @@ class StitchServerClient{
     }
     catch(e){
       res = e;
-      console.error("db.confirmUser", e);
+      console.error("reference_to_mongo_db.confirmUser", e);
     }
 
     this.serving_request = false;
@@ -283,7 +347,7 @@ class StitchServerClient{
     }
     catch(e){
       res = e;
-      console.error("db.registerUser", e);
+      console.error("reference_to_mongo_db.registerUser", e);
     }
 
     this.serving_request = false;
@@ -304,7 +368,7 @@ class StitchServerClient{
     }
     catch(e){
       res = e;
-      console.error("db.sendResetPasswordEmail", e);
+      console.error("reference_to_mongo_db.sendResetPasswordEmail", e);
     }
 
     this.serving_request = false;
@@ -312,6 +376,29 @@ class StitchServerClient{
     return res;
   }
 
+  getDataModel(){
+    let data_list = [];
+
+    for(let i = 0; i < this.sync_models.length; i++){
+      let name = this.sync_models[i];
+      let el = localStorage.getItem(name);
+      if(el != null){
+        data_list.push([name, JSON.parse(el)]);
+      }
+    }
+    return data_list;
+  }
+
+  // produce an empty model if is the first login
+  getFirstTimeModel(){
+
+    let model = this.getDataModel();
+    model.push(["email", this.email]);
+    model.push(["is_developer", false]);
+    model.push(["user_id", this.stitch_actual_client.auth.user.id]);
+
+    return model;
+  }
 
   // request resend confirmation email
   async resendConfirmationEmail(email){
@@ -326,7 +413,7 @@ class StitchServerClient{
     }
     catch(e){
       res = e;
-      console.error("db.resendConfirmationEmail", e);
+      console.error("reference_to_mongo_db.resendConfirmationEmail", e);
     }
 
     this.serving_request = false;
@@ -351,7 +438,7 @@ class StitchServerClient{
     }
     catch(e){
       res = e;
-      console.error("db.resetPassword", e);
+      console.error("reference_to_mongo_db.resetPassword", e);
     }
 
     this.serving_request = false;
@@ -368,14 +455,14 @@ class StitchServerClient{
     let error = null;
 
     if(!this.isAuthenticated()){
-      console.error("db.logout", "user is not authenticated.");
+      console.error("reference_to_mongo_db.logout", "user is not authenticated.");
     }else{
       try{
         await this.promiseTimeout(this.stitch_actual_client.auth.logout());
       }
       catch(e){
         error = e;
-        console.error("db.logout", e);
+        console.error("reference_to_mongo_db.logout", e);
       }
     }
 
@@ -402,7 +489,7 @@ class StitchServerClient{
     }
     catch(e){
       res = e;
-      console.error("db.login", e);
+      console.error("reference_to_mongo_db.login", e);
     }
 
     this.serving_request = false;
@@ -419,16 +506,16 @@ class StitchServerClient{
       let result = null;
 
       if(!this.isAuthenticated()){
-        console.error("db.setDeveloper", "user is not authenticated.");
+        console.error("reference_to_mongo_db.setDeveloper", "user is not authenticated.");
       }else{
         console.info("Setting developer flag to: " + mode);
 
         try{
-          result = await this.promiseTimeout(db.collection(collection).updateOne({user_id: client.auth.user.id} , {$set:{is_developer: mode}}, {upsert:true}));
+          result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id} , {$set:{is_developer: mode}}, {upsert:true}));
         }
         catch(e){
           result = e;
-          console.error("db.setDeveloper", e);
+          console.error("reference_to_mongo_db.setDeveloper", e);
         }
       }
 
@@ -436,6 +523,49 @@ class StitchServerClient{
 
       return result;
   }
+
+  // remove a single element in a collection
+  async remove(collection, data_list){
+
+      if(this.serving_request){return this.already_serving_flag;}
+      this.serving_request = true;
+
+      let result = null;
+
+      /*
+        Should be something like
+        {user_id: this.stitch_actual_client.auth.user.id} ,
+        {$set:{data:data}},
+        {upsert:true}
+      */
+      let patch_arguments = { $unset: {} };
+
+      for(let i = 0; i < data_list.length; i++){
+        let el = data_list[i];
+        patch_arguments["$unset"][el[0]] = el[1];
+      }
+
+      if(!isAuthenticated()){
+        console.error("reference_to_mongo_db.remove", "user is not authenticated.");
+      }else{
+          console.info("Tryng remove.", data_list);
+
+          try{
+            result = await promiseTimeout(reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id},patch_arguments,{upsert:true}));
+            console.info("Done.");
+          }
+          catch(e){
+            result = e;
+            console.error("reference_to_mongo_db.remove", e);
+          }
+      }
+
+      this.serving_request = false;
+
+      return result;
+    }
+
+
 
   // patch a single element in a collection
   async patchSingleInCollection(collection, field){
@@ -447,24 +577,24 @@ class StitchServerClient{
 
     /*
       Should be something like
-      {user_id: client.auth.user.id} ,
+      {user_id: this.stitch_actual_client.auth.user.id} ,
       {$set:{data:data}},
       {upsert:true}
     */
     let patch_arguments = { $set: field };
 
     if(!this.isAuthenticated()){
-      console.error("db.patchSingleInCollection", "user is not authenticated.");
+      console.error("reference_to_mongo_db.patchSingleInCollection", "user is not authenticated.");
     }else{
         console.info("Tryng patchSingleInCollection.", field);
 
         try{
-          result = await this.promiseTimeout(db.collection(collection).updateOne({user_id: client.auth.user.id},patch_arguments,{upsert:true}));
+          result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id},patch_arguments,{upsert:true}));
           console.info("Done.");
         }
         catch(e){
           result = e;
-          console.error("db.patchSingleInCollection", e);
+          console.error("reference_to_mongo_db.patchSingleInCollection", e);
         }
     }
 
@@ -481,12 +611,40 @@ class StitchServerClient{
     let result = null;
 
     if(!this.isAuthenticated()){
-      console.error("db.fetch", "user is not authenticated.");
+      console.error("reference_to_mongo_db.fetch", "user is not authenticated.");
     }else{
       console.info("Tryng fetch.");
 
       try{
-        result = await promiseTimeout(db.collection(collection).find({user_id: client.auth.user.id}, { limit: 1}).asArray());
+        result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).find({user_id: this.stitch_actual_client.auth.user.id}, { limit: 1}).asArray());
+        console.info("Fetch done.");
+      }
+      catch(e){
+        result = e;
+        console.error("reference_to_mongo_db.fetch", e);
+      }
+    }
+
+    this.serving_request = false;
+
+    return result;
+  }
+
+
+  async fetchAndInitModelIfMissing(collection){
+
+    if(this.serving_request){return this.already_serving_flag;}
+    this.serving_request = true;
+
+    let result = null;
+
+    if(!this.isAuthenticated()){
+      console.error("reference_to_mongo_db.fetchAndInitModelIfMissing", "user is not authenticated.");
+    }else{
+      console.info("Tryng fetch.");
+
+      try{
+        result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).find({user_id: this.stitch_actual_client.auth.user.id}, { limit: 1}).asArray());
         console.info("Fetch done.");
 
         // user has no data
@@ -494,16 +652,16 @@ class StitchServerClient{
           console.info("Fetch data is empty, filling first time user.");
 
           this.serving_request = false;
-          await this.promiseTimeout(this.patch(getFirstTimeModel()));
+          await this.promiseTimeout(this.patchInCollection(collection,this.getFirstTimeModel()));
           this.serving_request = true;
 
-          this.showBreadCrumb("Il tuo account è stato inizializzato.");
+          showBreadCrumb("Il tuo account è stato inizializzato.");
           console.info("Done.");
         }
       }
       catch(e){
         result = e;
-        console.error("db.fetch", e);
+        console.error("reference_to_mongo_db.fetchAndInitModelIfMissing", e);
       }
     }
 
@@ -521,7 +679,7 @@ class StitchServerClient{
 
     /*
       Should be something like
-      {user_id: client.auth.user.id} ,
+      {user_id: this.stitch_actual_client.auth.user.id} ,
       {$set:{data:data, data2:data2, etc...}},
       {upsert:true}
     */
@@ -533,17 +691,17 @@ class StitchServerClient{
     }
 
     if(!this.isAuthenticated()){
-      console.error("db.patchInCollection", "user is not authenticated.");
+      console.error("reference_to_mongo_db.patchInCollection", "user is not authenticated.");
     }else{
         console.info("Tryng patchInCollection.", data_list);
 
         try{
-          result = await this.promiseTimeout(db.collection(collection).updateOne({user_id: client.auth.user.id},patch_arguments,{upsert:true}));
+          result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id},patch_arguments,{upsert:true}));
           console.info("Done.");
         }
         catch(e){
           result = e;
-          console.error("db.patchInCollection", e);
+          console.error("reference_to_mongo_db.patchInCollection", e);
         }
     }
 
@@ -553,37 +711,79 @@ class StitchServerClient{
   }
 
   /*
+    Used in applications that use autologin feature
+
     This call will try to login with stored store credentials
     if available and if the fetch is enabled it will also load any user data,
     else will handle the error and return null.
 
     App should check if null is returned and go to login page if happens.
   */
-  async fullLoginFetchSequence(collection){
+  async autoLoginFullSequence(collection){
 
     /* there are stored credentials */
     if(this.loadStoredCredentials()){
 
-      this.showBreadCrumb("Accesso: " + this.email);
+      showBreadCrumb("Accesso: " + this.email);
       let res = await this.promiseTimeout(this.login(this.email, this.password));
 
       if(isNullOrUndefined(res)){
-        this.showBreadCrumb("Sincronizzazione dati...");
-        let obj = await this.promiseTimeout(this.fetch(collection));
+        showBreadCrumb("Sincronizzazione dati...");
+        let obj = await this.promiseTimeout(this.fetchAndInitModelIfMissing(collection));
 
         if(obj != null){
-          return obj[0];
+          this.bootRemoteModel(obj[0]);
         }
 
       }else{
         console.info("Login failed: " + (res.message || "unknown error"));
-        return null;
       }
 
     }else{
       console.info("There are no user creds stored. Cannot auto-login.");
-      return null;
     }
+
+    return null;
+}
+
+bootRemoteModel(user_data){
+
+  /* there are stats to update here */
+  if(!isNullOrUndefined(user_data)){
+
+    IsDeveloper = user_data["is_developer"];
+
+    for(let i = 0; i < this.sync_models.length; i++){
+      let name = this.sync_models[i];
+      let el = user_data[name];
+      if(!isNullOrUndefined(el)){
+        localStorage.setItem(name, JSON.stringify(el));
+      }
+    }
+
+    showBreadCrumb("Dati sincronizzati.");
+  }
+}
+
+async fullLoginFetchSequence(email, password, collection){
+
+    showBreadCrumb("Accesso: " + email);
+    let res = await this.promiseTimeout(this.login(email, password));
+
+    if(isNullOrUndefined(res)){
+      showBreadCrumb("Sincronizzazione dati...");
+      let obj = await this.promiseTimeout(this.fetchAndInitModelIfMissing(collection));
+
+      if(obj != null){
+        this.bootRemoteModel(obj[0]);
+      }else{
+        showBreadCrumb("Impossibile caricare i dati...");
+      }
+    }else{
+      console.info("Login failed: " + (res.message || "unknown error"));
+    }
+
+    return null;
 }
 
 
@@ -1048,6 +1248,13 @@ class StitchAppClient {
       }
     }
 
+    // set sync models
+    setSyncModels(modelsList){
+      if(!isNullOrUndefined(modelsList)){
+        this.server.sync_models = modelsList;
+      }
+    }
+
     // default unknown page
     showLockedPage() {
 
@@ -1411,6 +1618,47 @@ class StitchAppClient {
       this.toggleAPISpinner(true);
       return this.handleApiResult(await this.server.resendConfirmationEmail(email), "Abbiamo reinviato una email di conferma al tuo indirizzo. Clicca nel link dell'email per completare la registrazione.");
     }
+
+    // override the deleteRemoteModel feature by forcing for some moment
+    // the sync of a specific field
+    async deleteRemoteSpecificField(collection, model_name){
+      let was = this.server.sync_models;
+      this.server.sync_models = [model_name];
+
+      // this calls uses the global SYNC_MODELS to know which models should go on backend
+      let result = await deleteRemoteModel(collection);
+
+      this.server.sync_models = was;
+
+      return result;
+    }
+
+    // override the updateRemoteModel feature by forcing for some moment
+    // the sync of a specific field
+    async updateSpecificModel(collection, model_name){
+
+      let was = this.server.sync_models;
+      this.server.sync_models = [model_name];
+
+      // this calls uses the global SYNC_MODELS to know which models should go on backend
+      let result = await updateRemoteModel(collection);
+
+      this.server.sync_models = was;
+
+      return result;
+    }
+
+    // update all the remote models marked for sinkyng
+    async updateRemoteModel(collection){
+      return await this.server.patchInCollection(collection,this.server.getDataModel());
+    }
+
+    // delete all the remote models marked for sinkyng
+    async deleteRemoteModel(collection){
+      return await this.server.remove(collection,this.server.getDataModel());
+    }
+
+    // classic login
     async login(email, password){
 
       if(isVoidString(email)){
@@ -1460,9 +1708,9 @@ class StitchAppClient {
       this.toggleAPISpinner(true);
       return this.handleApiResult(await this.server.patchInCollection(collection, data_list), null);
     }
-    async fullLoginFetchSequence(collection){
+    async fullLoginFetchSequence(email, password, collection){
 
       this.toggleAPISpinner(true);
-      return this.handleApiResult(await this.server.fullLoginFetchSequence(collection), null);
+      return this.handleApiResult(await this.server.fullLoginFetchSequence(email, password, collection), null);
     }
 }
