@@ -887,6 +887,9 @@ class StitchAppClient {
 
     server = null;
 
+    // user ready to use variables
+    
+
     // used to dynamically resize some elements
     elementsRegisteredForDynamicResize = [];
 
@@ -1250,8 +1253,40 @@ class StitchAppClient {
 
     // set sync models
     setSyncModels(modelsList){
+
       if(!isNullOrUndefined(modelsList)){
-        this.server.sync_models = modelsList;
+
+        let models_names = [];
+
+        for(let i = 0; i < modelsList.length; i++){
+
+          let model_element = modelsList[i];
+
+          let model_name = model_element["name"];
+          let model_type = model_element["type"];
+
+          let model_prototype = null;
+
+          if(model_type == "string"){
+            model_prototype = "";
+          }
+          if(model_type == "list"){
+            model_prototype = [];
+          }
+          if(model_type == "obj"){
+            model_prototype = {};
+          }
+
+          // store name
+          models_names.push(model_name);
+
+          // not exists
+          if(localStorage.getItem(model_name) === null && !isNullOrUndefined(model_prototype)){
+            localStorage.setItem(model_name, JSON.stringify(model_prototype));
+          }
+        }
+
+        this.server.sync_models = models_names;
       }
     }
 

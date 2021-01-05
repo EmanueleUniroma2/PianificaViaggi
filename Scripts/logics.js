@@ -305,6 +305,15 @@ var App_Pages = [
   }
 ];
 
+// tell the framework how to prepeare the empty datas that
+// will be later syncked
+const SyncModelsPrototypes = [
+  {
+    "name":"groups",
+    "type":"list"
+  }
+];
+
 
 // init here db name and realm app name
 const version_label = "Versione 0.4 (non aperto al pubblico)";
@@ -324,6 +333,7 @@ function navigate(page){
 function boot(){
   stitchClient.registerAppTargetNodeId("page_content");
   stitchClient.registerAppPages(App_Pages);
+  stitchClient.setSyncModels(SyncModelsPrototypes);
   //stitchClient.setPageResizeHandle("handlePageResize");
   stitchClient.boot();
 
