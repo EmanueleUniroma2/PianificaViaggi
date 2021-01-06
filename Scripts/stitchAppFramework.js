@@ -4,6 +4,15 @@ var lastInitedAppClient = null;
 var IsDeveloper = false;
 var singletonRegisteredEventListeners = [];
 
+function getStitchAppClient(app_name, db_name) {
+
+  if(lastInitedAppClient == null){
+    lastInitedAppClient = new StitchAppClient(app_name, db_name);
+    lastInitedAppClient.injectStitchFrameworkCss();
+  }
+  return lastInitedAppClient;
+}
+
 function removeElementFromList(list, element) {
   let index = list.indexOf(element);
   if (index > -1) {
@@ -11,14 +20,12 @@ function removeElementFromList(list, element) {
   }
   return list;
 }
-
 function singletonAddEventListener(target, eventName, callBack,flag){
   if(singletonRegisteredEventListeners.indexOf(eventName)){
     singletonRegisteredEventListeners.push(eventName);
     target.addEventListener(eventName, callBack,flag);
   }
 }
-
 function pageHasResized(){
   if(!isNullOrUndefined(lastInitedAppClient)){
     lastInitedAppClient.pageResizeHandle();
@@ -29,9 +36,24 @@ function pageHasChanged(){
     lastInitedAppClient.pageNavigate();
   }
 }
-function storageRemoveItem(name){
+function storageRemoveItem(collection,name){
+  let toBeRemoved = storageGetItem(name);
   localStorage.removeItem(name);
+  if(!isVoidString(collection)){
+    lastInitedAppClient.bewareStorageRemoved(collection, name,toBeRemoved);
+  }
 }
+
+function storageGetAnyItemStartingWith(prefix){
+  let results = [];
+  Object.keys(localStorage).forEach(function(key){
+    if(key.substring(0,prefix.length) == prefix){
+      results.push(JSON.parse(localStorage.getItem(key)));
+    }
+  });
+  return results;
+}
+
 function storageGetItem(name){
   let el = localStorage.getItem(name);
   try{
@@ -43,10 +65,13 @@ function storageGetItem(name){
   }
   return null;
 }
-function storageSetItem(name, value){
+function storageSetItem(collection, name, value){
   let ready_to_save = JSON.stringify(value);
   localStorage.setItem(name, ready_to_save);
-  lastInitedAppClient.bewareStorageUpdate(name);
+
+  if(!isVoidString(collection)){
+    lastInitedAppClient.bewareStorageUpdate(collection,name, value);
+  }
 }
 function clearStorage(){
   localStorage.clear();
@@ -248,6 +273,9 @@ class StitchServerClient{
   //
   // remember that only elements that are stored in the localStorage can be syncked
   sync_models = [];
+
+  // set of models that must be romoved from storage upon logout
+  authenticated_models = [];
 
   // drivers
   db_name = "";
@@ -565,13 +593,13 @@ class StitchServerClient{
         patch_arguments["$unset"][el[0]] = el[1];
       }
 
-      if(!isAuthenticated()){
+      if(!this.isAuthenticated()){
         console.error("reference_to_mongo_db.remove", "user is not authenticated.");
       }else{
           console.info("Tryng remove.", data_list);
 
           try{
-            result = await promiseTimeout(reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id},patch_arguments,{upsert:true}));
+            result = await this.promiseTimeout(reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id},patch_arguments,{upsert:true}));
             console.info("Done.");
           }
           catch(e){
@@ -623,6 +651,33 @@ class StitchServerClient{
     return result;
   }
 
+  async findInCollection(collection, search_path){
+
+    if(this.serving_request){return this.already_serving_flag;}
+    this.serving_request = true;
+
+    let result = null;
+
+    if(!this.isAuthenticated()){
+      console.error("reference_to_mongo_db.findInCollection", "user is not authenticated.");
+    }else{
+      console.info("Tryng findInCollection.");
+
+      try{
+        result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).find(search_path, { limit: 1}).asArray());
+        console.info("findInCollection done.");
+      }
+      catch(e){
+        result = e;
+        console.error("reference_to_mongo_db.findInCollection", e);
+      }
+    }
+
+    this.serving_request = false;
+
+    return result;
+  }
+
   async fetch(collection){
 
     if(this.serving_request){return this.already_serving_flag;}
@@ -661,11 +716,11 @@ class StitchServerClient{
     if(!this.isAuthenticated()){
       console.error("reference_to_mongo_db.fetchAndInitModelIfMissing", "user is not authenticated.");
     }else{
-      console.info("Tryng fetch.");
+      console.info("Tryng fetchAndInitModelIfMissing.");
 
       try{
         result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).find({user_id: this.stitch_actual_client.auth.user.id}, { limit: 1}).asArray());
-        console.info("Fetch done.");
+        console.info("fetchAndInitModelIfMissing done.");
 
         // user has no data
         if(result.length == 0){
@@ -688,6 +743,59 @@ class StitchServerClient{
     this.serving_request = false;
 
     return result;
+  }
+
+  async removeInCollection(collection, objectToRemove){
+
+    if(this.serving_request){return this.already_serving_flag;}
+    this.serving_request = true;
+
+    let result = null;
+
+    if(!this.isAuthenticated()){
+      console.error("reference_to_mongo_db.removeInCollection", "user is not authenticated.");
+    }else{
+        console.info("Tryng removeInCollection.");
+
+        try{
+          result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).deleteOne({user_id: this.stitch_actual_client.auth.user.id, data_id: objectToRemove["data_id"]}));
+          console.info("Done.");
+        }
+        catch(e){
+          result = e;
+          console.error("reference_to_mongo_db.removeInCollection", e);
+        }
+    }
+
+    this.serving_request = false;
+
+    return result;
+  }
+
+  async postInCollection(collection, objectToPost){
+
+        if(this.serving_request){return this.already_serving_flag;}
+        this.serving_request = true;
+
+        let result = null;
+
+        if(!this.isAuthenticated()){
+          console.error("reference_to_mongo_db.postInCollection", "user is not authenticated.");
+        }else{
+            console.info("Tryng postInCollection.");
+            try{
+              result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id, data_id: objectToPost["data_id"]}, { $set: objectToPost },{upsert:true}));
+              console.info("Done.");
+            }
+            catch(e){
+              result = e;
+              console.error("reference_to_mongo_db.postInCollection", e);
+            }
+        }
+
+        this.serving_request = false;
+
+        return result;
   }
 
   async patchInCollection(collection, data_list){
@@ -713,10 +821,9 @@ class StitchServerClient{
     if(!this.isAuthenticated()){
       console.error("reference_to_mongo_db.patchInCollection", "user is not authenticated.");
     }else{
-        console.info("Tryng patchInCollection.", data_list);
-
+        console.info("Tryng patchInCollection.", collection, data_list, object_id_reference);
         try{
-          result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id},patch_arguments,{upsert:true}));
+          result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne( {user_id: this.stitch_actual_client.auth.user.id}, patch_arguments,{upsert:true}));
           console.info("Done.");
         }
         catch(e){
@@ -729,6 +836,7 @@ class StitchServerClient{
 
     return result;
   }
+
 
   /*
     Used in applications that use autologin feature
@@ -850,6 +958,14 @@ async fullLoginFetchSequence(email, password, collection){
       }
     });
 
+    for(let i = 0; i < this.authenticated_models.length; i++){
+      try{
+        localStorage.removeItem(this.authenticated_models[i]);
+      }catch(e){
+        // doesnt exist so no problem
+      }
+    }
+
     for(let i = 0; i < this.sync_models.length; i++){
       localStorage.removeItem(this.sync_models[i]);
     }
@@ -923,9 +1039,6 @@ class StitchAppClient {
 
     // page resize callback
     pageResizedCallbackName = null;
-
-    // set this variable to enable fast updates on a specific collection
-    defaultCollectionForDataUpdates = null;
 
     constructor(app_name, db_name){
 
@@ -1316,40 +1429,8 @@ class StitchAppClient {
 
     // set sync models
     setSyncModels(modelsList){
-
       if(!isNullOrUndefined(modelsList)){
-
-        let models_names = [];
-
-        for(let i = 0; i < modelsList.length; i++){
-
-          let model_element = modelsList[i];
-
-          let model_name = model_element["name"];
-          let model_type = model_element["type"];
-
-          let model_prototype = null;
-
-          if(model_type == "string"){
-            model_prototype = "";
-          }
-          if(model_type == "list"){
-            model_prototype = [];
-          }
-          if(model_type == "obj"){
-            model_prototype = {};
-          }
-
-          // store name
-          models_names.push(model_name);
-
-          // not exists
-          if(localStorage.getItem(model_name) === null && !isNullOrUndefined(model_prototype)){
-            localStorage.setItem(model_name, JSON.stringify(model_prototype));
-          }
-        }
-
-        this.server.sync_models = models_names;
+        this.server.sync_models = modelsList;
       }
     }
 
@@ -1619,24 +1700,23 @@ class StitchAppClient {
       return this.server.email;
     }
 
-
+    // credits: https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
+    getGUIID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
 
     // needed for any action to begin
-    boot(defaultDataCollection){
-
-        this.defaultCollectionForDataUpdates = defaultDataCollection;
+    boot(){
 
         this.server.loadStoredCredentials();
 
         singletonAddEventListener(window, 'resize', pageHasResized, false);
         singletonAddEventListener(window, 'hashchange', pageHasChanged, false);
 
-        if(lastInitedAppClient == null){
-          this.injectStitchFrameworkCss();
-        }
-
         this.pageNavigate();
-        lastInitedAppClient = this;
     }
 
     // get stitch client user id
@@ -1753,25 +1833,27 @@ class StitchAppClient {
       return result;
     }
 
+    // send a single object on the collection
+    async updateObject(collection, obj){
+      await this.server.promiseTimeout(this.server.postInCollection(collection, obj));
+    }
+
+    // delete a single object on the collection
+    async removeObject(collection, obj){
+      await this.server.promiseTimeout(this.server.removeInCollection(collection, obj));
+    }
 
     // if the storage is updated, the client is notified
     // then the client must check if the storage updated an item
     // registered for syncking. If yes, synck it
-    bewareStorageUpdate(keyName){
-
-      if(isVoidString(this.defaultCollectionForDataUpdates)){
-        console.error("Could not synk storage update: defaultCollectionForDataUpdates is not set");
-      }
-
-      let synk_keys = this.server.sync_models;
-
-      for(let i = 0; i < synk_keys.length; i++){
-        if(synk_keys[i] == keyName){
-          this.updateSpecificModel(this.defaultCollectionForDataUpdates, keyName);
-          return;
-        }
-      }
-
+    bewareStorageUpdate(collection, name, obj){
+      this.server.authenticated_models.push(name);
+      this.updateObject(collection, obj);
+    }
+    // as above but for deletion
+    bewareStorageRemoved(collection,name, obj){
+      this.server.authenticated_models = removeElementFromList(this.server.authenticated_models, name);
+      this.removeObject(collection, obj);
     }
 
     // update all the remote models marked for sinkyng
@@ -1824,6 +1906,12 @@ class StitchAppClient {
       this.toggleAPISpinner(true);
       return this.handleApiResult(await this.server.patchSingleInCollection(collection, field), null);
     }
+    async find(collection, rule){
+
+      this.toggleAPISpinner(true);
+      return this.handleApiResult(await this.server.findInCollection(collection,rule), null);
+    }
+
     async fetch(collection){
 
       this.toggleAPISpinner(true);

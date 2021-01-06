@@ -100,7 +100,7 @@ var App_Pages = [
           },
           {
             "node_type": "div",
-            "node_tags": [["innerHTML", "Su quale gruppo vuoi lavorare?"],["className","generic_label new_group_label"]]
+            "node_tags": [["innerHTML", "Su quale gruppo vuoi lavorare?"],["className","generic_label page_title"]]
           },
           {
             "node_type": "select",
@@ -118,7 +118,7 @@ var App_Pages = [
             "node_childs": [
               {
                 "node_type": "div",
-                "node_tags": [["id", "home_group_title"],["className", "home_group_title"]],
+                "node_tags": [["id", "home_group_title"],["className", "page_title"]],
               },
               {
                 "node_type": "div",
@@ -167,6 +167,41 @@ var App_Pages = [
             ]
           }
         ]
+      }
+    ]
+  },
+  {
+    "name" : "profile",
+    "requiresAuth": true,
+    "content": [
+      {
+        "node_type":"div",
+        "node_tags": [["className","inner_page"]],
+        "node_childs": [
+          {
+            "node_type": "div",
+            "node_tags": [["className", "topbar_specification"]],
+            "node_childs": [
+              {
+                "node_type": "div",
+                "node_tags": [["$responsive", "x<600:toolbar_label_small ;x<inf:toolbar_label"], ["className", "toolbar_label"], ["innerHTML", "Pianifica e Viaggia!"]]
+              },
+              {
+                "node_type": "div",
+                "node_tags": [["innerHTML", "$call_getLoggedEmail"], ["className","toolbar_button"], ["onclick","openToolbarMenu(this)"]]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "node_type":"div",
+        "node_tags": [["className","page_title"], ["innerHTML", "Il mio profilo"]]
+      },
+      {
+        "node_type":"div",
+        "node_afterinit": "initUserProfileSection",
+        "node_tags": [["id","user_profile_info_wrap"],["className","profile_page_info_wrap"]]
       }
     ]
   },
@@ -305,12 +340,7 @@ var App_Pages = [
 
 // tell the framework how to prepeare the empty datas that
 // will be later syncked
-const SyncModelsPrototypes = [
-  {
-    "name":"groups",
-    "type":"list"
-  }
-];
+const SyncModelsPrototypes = [""];
 
 
 // init here db name and realm app name
@@ -318,9 +348,10 @@ const version_label = "Versione 0.4 (non aperto al pubblico)";
 const app_name = "pianificaeviaggia-ljhog";
 const db_name = "pianifica_viaggi_user_data";
 const user_data_collection_name = "user_data";
+const user_groups_collection_name = "user_groups";
 const user_requests_collection_name = "user_requests";
 
-const stitchClient = new StitchAppClient(app_name, db_name);
+const stitchClient = getStitchAppClient(app_name, db_name);
 
 var userSynckedModel = null;
 
@@ -333,7 +364,7 @@ function boot(){
   stitchClient.registerAppPages(App_Pages);
   stitchClient.setSyncModels(SyncModelsPrototypes);
   //stitchClient.setPageResizeHandle("handlePageResize");
-  stitchClient.boot(user_data_collection_name);
+  stitchClient.boot();
 
   setVersion();
   loginSetup();
@@ -353,11 +384,23 @@ async function performLogin(){
   let password = getInputValue("login_password");
 
   if(storageGetItem("rememberme", rememberme)){
-    storageSetItem("email", email);
-    storageSetItem("password", password);
+    storageSetItem("","email", email);
+    storageSetItem("","password", password);
   }
 
   if(await stitchClient.fullLoginFetchSequence(email, password, user_data_collection_name) == null){
+
+    let pattern = {
+      user_id : stitchClient.getAuthenticatedId()
+    };
+
+    let your_groups = await stitchClient.find(user_groups_collection_name, pattern);
+
+    for(let i = 0; i < your_groups.length; i++){
+      localStorage.setItem(your_groups[i]["data_id"], JSON.stringify(your_groups[i]));
+    }
+
+
     navigate('home');
   }
 }
@@ -396,7 +439,7 @@ function setVersion() {
 }
 
 function rememberMeToggle() {
-  storageSetItem("rememberme", getCheckboxIsChecked("rememberme"));
+  storageSetItem("","rememberme", getCheckboxIsChecked("rememberme"));
 }
 
 
@@ -411,8 +454,8 @@ function rememberMeFeature(){
   }else{
     setInputValue("login_email", "");
     setInputValue("login_password", "");
-    storageRemoveItem("email");
-    storageRemoveItem("password");
+    storageRemoveItem("","email");
+    storageRemoveItem("","password");
   }
 }
 
@@ -439,7 +482,7 @@ function openToolbarMenu(targetNode) {
   }
 
   // create it if missing
-  let voices = [["Cambia Password", "performResetPasswordEmailRequest()"], ["Logout","performLogout()"]];
+  let voices = [["Gestione gruppi", "navigate('home')"], ["Il mio profilo", "navigate('profile')"], ["Logout","performLogout()"]];
   menu = document.createElement("div");
   menu.className = "toolbar_user_menu";
   menu.id = "toolbar_user_menu_id";
@@ -466,12 +509,7 @@ async function performResetPasswordEmailRequest() {
 }
 
 function getUserGroups(){
-  let groups = storageGetItem("groups");
-  if(isNullOrUndefined(groups)){
-    groups = [];
-    storageSetItem("groups",groups);
-  }
-  return groups;
+  return storageGetAnyItemStartingWith("group");
 }
 
 function initGroupSelect() {
@@ -484,7 +522,7 @@ function initGroupSelect() {
     let option = document.createElement("option");
     option.className = "group_select_option";
     option.innerHTML = group["title"];
-    option.value = group["id"];
+    option.value = group["data_id"];
     if(i == 0){
       option.setAttribute("select","true");
     }
@@ -525,14 +563,11 @@ function processNewGroupDialogClick() {
   let group = {
     "title": result[0],
     "description": result[1],
-    "owner_id": stitchClient.getAuthenticatedId(),
-    "id": uuidv4()
+    "invited_users": [],
+    "data_id": "group_" + stitchClient.getGUIID()
   };
 
-  let current_groups = getUserGroups();
-  current_groups.unshift(group);
-  storageSetItem("groups",current_groups);
-
+  storageSetItem(user_groups_collection_name,group["data_id"],group);
   stitchClient.pageNavigate();
 
   setTimeout(function(){
@@ -553,36 +588,24 @@ function deleteCurrentGroup() {
 }
 function deleteCurrentGroupConfirmed() {
   let selected = document.getElementById("group_select").value;
-  let groups = getUserGroups();
-
-  for(let i = 0; i < groups.length;i++){
-    if(groups[i]["id"] == selected){
-      let ereasing = groups[i]["title"];
-      let updated = removeElementFromList(groups,groups[i]);
-
-      storageSetItem("groups",updated);
-      stitchClient.pageNavigate();
-      stitchClient.openInfoDialog("Gruppo eliminato con successo: <strong>"+ereasing+"</strong>");
-      return;
-    }
-  }
+  let ereasing = getSelectedGroup();
+  storageRemoveItem(user_groups_collection_name,selected);
+  stitchClient.pageNavigate();
+  stitchClient.openInfoDialog("Gruppo eliminato con successo: <strong>"+ereasing["title"]+"</strong>");
+  return;
 }
 
 function getSelectedGroup() {
   let selected = document.getElementById("group_select").value;
   let groups = getUserGroups();
   for(let i = 0; i < groups.length;i++){
-    if(groups[i]["id"] == selected){
+    if(groups[i]["data_id"] == selected){
       return groups[i];
     }
   }
   return null;
 }
 
-// credits: https://stackoverflow.com/questions/105034/how-to-create-a-guid-uuid
-function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+function initUserProfileSection() {
+  let wrap = document.getElementById("user_profile_info_wrap");
 }

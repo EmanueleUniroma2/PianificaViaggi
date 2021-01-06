@@ -86,15 +86,11 @@ html{
 .new_group_select_small{
   width: 84% !important;
 }
-.new_group_label{
-  margin: 1rem;
-  font-size: 1.2rem;
-  margin-top: 2.5rem;
-}
 .new_group_select{
   margin: 0 1rem;
   width: 41.5%;
   margin-bottom: 1rem;
+  margin-top: 1rem;
 }
 .group_select_option{
   font-size: 1.1rem;
@@ -105,7 +101,7 @@ html{
   display: inline-block;
   min-width: 20.6rem;
   position: relative;
-  top: 0.1rem;
+  top: 0.2rem;
 }
 .new_group_button_small{
   width: 82% !important;
@@ -194,6 +190,7 @@ html{
 .toolbar_user_menu{
     position: absolute;
     margin-top: 0.4rem;
+    z-index: 10;
     right: 1.1rem;
     width: 15rem;
     background: white;
@@ -264,7 +261,7 @@ background: rgba(0,0,0,0.2);
   margin-bottom: 2rem;
   color: #27282e;
 }
-.home_group_title{
+.page_title{
   margin-top: 1rem;
   padding: 0.5rem;
   padding-left: 2rem;
@@ -276,4 +273,7 @@ background: rgba(0,0,0,0.2);
   padding-left: 2rem;
   padding-top: 0.2rem;
   background: linear-gradient(45deg, rgba(255,255,255,0.2), transparent);
+}
+.profile_page_info_wrap{
+
 }
