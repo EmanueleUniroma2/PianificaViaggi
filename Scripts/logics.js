@@ -608,4 +608,7 @@ function getSelectedGroup() {
 
 function initUserProfileSection() {
   let wrap = document.getElementById("user_profile_info_wrap");
+
+  let name_i = document.createElement("input");
+  
 }
