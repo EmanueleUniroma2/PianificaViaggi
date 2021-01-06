@@ -515,15 +515,15 @@ async function performLogin() {
         storageSetItem("", "password", password);
     }
 
+    stitchClient.spinnerKeepUp = 2;
+
     if (await stitchClient.fullLoginFetchSequence(email, password, user_data_collection_name) == null) {
 
         let pattern = {
             user_id: stitchClient.getAuthenticatedId()
         };
 
-        stitchClient.disableApiSpinner();
         let your_groups = await stitchClient.find(user_groups_collection_name, pattern);
-        stitchClient.allowApiSpinner();
 
         if (!isNullOrUndefined(your_groups)) {
             for (let i = 0; i < your_groups.length; i++) {

@@ -948,6 +948,9 @@ class StitchAppClient {
     // api spinner feature toggle
     allowSpinnerWhenCallingAStitchApi = true;
 
+    // preserve API spinners removals for N times
+    spinnerKeepUp = 0;
+
     constructor(app_name, db_name) {
 
         if (isVoidString(app_name) || isVoidString(db_name)) {
@@ -1172,23 +1175,40 @@ class StitchAppClient {
           return;
         }
 
+        if(!toggle && this.spinnerKeepUp > 0){
+          this.spinnerKeepUp = this.spinnerKeepUp - 1;
+          return;
+        }
+
+        // add one instance of the API spinner IF no istance is currently running
         if (toggle) {
 
-            let spinner_backdrop = document.createElement("div");
-            spinner_backdrop.className = "stitch_api_spinner_backdrop";
-            document.body.appendChild(spinner_backdrop);
+            let spinner_backdrops = document.getElementsByClassName("stitch_api_spinner_backdrop");
 
-            let spinner = document.createElement("div");
-            spinner.className = "stitch_api_spinner";
-            document.body.appendChild(spinner);
-        } else {
-            let l = document.getElementsByClassName("stitch_api_spinner_backdrop");
-            if (l.length != 0) {
-                l[0].parentElement.removeChild(l[0]);
+            if(spinner_backdrops.length == 0){
+
+              let spinner_backdrop = document.createElement("div");
+              spinner_backdrop.className = "stitch_api_spinner_backdrop";
+              document.body.appendChild(spinner_backdrop);
+
+              let spinner = document.createElement("div");
+              spinner.className = "stitch_api_spinner";
+              document.body.appendChild(spinner);
             }
-            let r = document.getElementsByClassName("stitch_api_spinner");
-            if (r.length != 0) {
-                r[0].parentElement.removeChild(r[0]);
+        }
+        // remove ANY instance of the API spinner
+        else
+        {
+            let spinner_backdrops = document.getElementsByClassName("stitch_api_spinner_backdrop");
+            for(let i = 0; i < spinner_backdrops.length;i++){
+              let backdrop = spinner_backdrops[i];
+              backdrop.parentElement.removeChild(backdrop);
+            }
+
+            let spinners = document.getElementsByClassName("stitch_api_spinner");
+            for(let i = 0; i < spinners.length;i++){
+              let spinner = spinners[i];
+              spinner.parentElement.removeChild(spinner);
             }
         }
     }
@@ -1827,6 +1847,7 @@ class StitchAppClient {
         }
 
         this.toggleAPISpinner(true);
+        showBreadCrumb("Accesso: " + email);
         return this.handleApiResult(await this.server.login(email.toLowerCase(), password), null);
     }
     async logout() {
@@ -1870,7 +1891,6 @@ class StitchAppClient {
         let res = await this.tryLogin(email, password);
 
         if (isNullOrUndefined(res)) {
-            showBreadCrumb("Accesso: " + email);
             let obj = await this.handleApiResult(this.server.fetchAndInitModelIfMissing(collection));
 
             if (obj != null) {
@@ -1904,7 +1924,6 @@ class StitchAppClient {
             let res = await this.tryLogin(email, password);
 
             if (isNullOrUndefined(res)) {
-                showBreadCrumb("Accesso: " + email);
                 let obj = await this.handleApiResult(this.server.fetchAndInitModelIfMissing(collection));
 
                 if (obj != null) {
