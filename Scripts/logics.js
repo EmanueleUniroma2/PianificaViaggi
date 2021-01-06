@@ -682,7 +682,7 @@ function changeGroup() {
 
 function editCurrentGroup() {
     let current_group = getSelectedGroup();
-    stitchClient.openInputDialog("Inserisci i seguenti campi per creare un gruppo.", [{
+    stitchClient.openInputDialog("Usa i seguenti campi per modificare il gruppo.", [{
         "title": "Nome del gruppo",
         "placeholder": "Nome",
         "start_value": current_group["title"]
