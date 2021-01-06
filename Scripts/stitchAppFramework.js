@@ -194,6 +194,7 @@ var Stitch_FrameWork_EmbeddedStyles = ""+
 "  font-weight: bold;"+
 "  font-size: 1.3em;"+
 "  color: black;"+
+"  margin-bottom: 1rem;"+
 "}"+
 ".stitch_modal_button{"+
 "	display: inline-block;"+
@@ -1783,7 +1784,7 @@ class StitchAppClient {
         this.server.authenticated_models = removeElementFromList(this.server.authenticated_models, name);
         this.removeObject(collection, obj);
       }else{
-        this.deleteRemoteSpecificField(collection, name);        
+        this.deleteRemoteSpecificField(collection, name);
       }
     }
 
