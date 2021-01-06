@@ -46,6 +46,14 @@ function storageRemoveItem(collection, name) {
     }
 }
 
+function storageRemoveAnyItemsStartingWith(prefix){
+  Object.keys(localStorage).forEach(function(key) {
+      if (key.substring(0, prefix.length) == prefix) {
+        localStorage.removeItem(key);
+      }
+  });
+}
+
 function storageGetAnyItemStartingWith(prefix) {
     let results = [];
     Object.keys(localStorage).forEach(function(key) {
@@ -653,9 +661,7 @@ class StitchServerClient {
             console.info("Tryng findInCollection.");
 
             try {
-                result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).find(search_path, {
-                    limit: 1
-                }).asArray());
+                result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).find(search_path).asArray());
                 console.info("findInCollection done.");
             } catch (e) {
                 result = e;
@@ -678,8 +684,6 @@ class StitchServerClient {
             try {
                 result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).find({
                     user_id: this.stitch_actual_client.auth.user.id
-                }, {
-                    limit: 1
                 }).asArray());
                 console.info("Fetch done.");
             } catch (e) {
@@ -704,8 +708,6 @@ class StitchServerClient {
             try {
                 result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).find({
                     user_id: this.stitch_actual_client.auth.user.id
-                }, {
-                    limit: 1
                 }).asArray());
                 console.info("fetchAndInitModelIfMissing done.");
 

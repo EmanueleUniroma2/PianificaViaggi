@@ -299,3 +299,26 @@ background: rgba(0,0,0,0.2);
 .edit_profile_button_small{
   width: 84% !important;
 }
+.refresh_groups_icon_inner{
+  height: 1.5rem;
+  opacity: 0.7;
+}
+.refresh_groups_icon{
+  display: inline-block;
+  position: absolute;
+  margin-left: 1rem;
+  margin-top: -0.2rem;
+  background: rgba(0,0,0,0.1);
+  padding: 0.5rem;
+  border: 1px solid rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+.refresh_groups_icon:hover{
+  background: rgba(0,0,0,0.2);
+}
+.refresh_groups_icon:active{
+  background: rgba(0,0,0,0.3);
+}
+.home_page_label{
+  display: inline-block;
+}

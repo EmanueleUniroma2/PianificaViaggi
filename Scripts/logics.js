@@ -131,8 +131,33 @@ var App_Pages = [{
         }, {
             "node_type": "div",
             "node_tags": [
-                ["innerHTML", "Su quale gruppo vuoi lavorare?"],
                 ["className", "generic_label page_title"]
+            ],
+            "node_childs": [
+              {
+                "node_type": "div",
+                "node_tags": [
+                    ["className", "home_page_label"],
+                    ["innerHTML", "Su quale gruppo vuoi lavorare?"]
+                ],
+              },
+              {
+                "node_type": "div",
+                "node_tags": [
+                    ["className", "refresh_groups_icon"],
+                    ["src", "./Assets/refresh_icon.png"],
+                    ["onclick", "loadRemoteGroups()"]
+                ],
+                "node_childs": [
+                  {
+                    "node_type": "img",
+                    "node_tags": [
+                        ["className", "refresh_groups_icon_inner"],
+                        ["src", "./Assets/refresh_icon.png"]
+                      ]
+                  }
+                ]
+              }
             ]
         }, {
             "node_type": "select",
@@ -519,20 +544,32 @@ async function performLogin() {
 
     if (await stitchClient.fullLoginFetchSequence(email, password, user_data_collection_name) == null) {
 
-        let pattern = {
-            user_id: stitchClient.getAuthenticatedId()
-        };
-
-        let your_groups = await stitchClient.find(user_groups_collection_name, pattern);
-
-        if (!isNullOrUndefined(your_groups)) {
-            for (let i = 0; i < your_groups.length; i++) {
-                localStorage.setItem(your_groups[i]["data_id"], JSON.stringify(your_groups[i]));
-            }
-        }
+        await loadRemoteGroups();
 
         navigate('home');
     }
+}
+
+async function loadRemoteGroups(){
+
+  storageRemoveAnyItemsStartingWith("group_");
+
+  let pattern = {
+      $or: [
+        {user_id: stitchClient.getAuthenticatedId()},
+        {invited_users_ids_only: stitchClient.getAuthenticatedId()}
+      ]
+  };
+
+  let your_groups = await stitchClient.find(user_groups_collection_name, pattern);
+
+  if (!isNullOrUndefined(your_groups)) {
+      for (let i = 0; i < your_groups.length; i++) {
+          localStorage.setItem(your_groups[i]["data_id"], JSON.stringify(your_groups[i]));
+      }
+  }
+
+  stitchClient.pageNavigate();
 }
 
 function performRegister() {
