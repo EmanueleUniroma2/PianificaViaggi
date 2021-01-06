@@ -949,6 +949,8 @@ class StitchAppClient {
     allowSpinnerWhenCallingAStitchApi = true;
 
     // preserve API spinners removals for N times
+    // this is ignored and resetted to 0 if one api
+    // throws any kynd of error
     spinnerKeepUp = 0;
 
     constructor(app_name, db_name) {
@@ -1248,8 +1250,6 @@ class StitchAppClient {
     // handler for stitch errors
     handleApiResult(result, success) {
 
-        this.toggleAPISpinner(false);
-
         let error_result = false;
 
         try {
@@ -1262,6 +1262,7 @@ class StitchAppClient {
 
             if (result.message != "silent") {
                 let text = this.textForApiErrorCode(result.message);
+                this.spinnerKeepUp = 0;
                 this.openAlertDialog(text);
             }
 
@@ -1276,6 +1277,8 @@ class StitchAppClient {
             document.location.href;
 
         let params_list = my_url_var.split("?");
+
+        this.toggleAPISpinner(false);
 
         return result;
     }
@@ -1847,7 +1850,6 @@ class StitchAppClient {
         }
 
         this.toggleAPISpinner(true);
-        showBreadCrumb("Accesso: " + email);
         return this.handleApiResult(await this.server.login(email.toLowerCase(), password), null);
     }
     async logout() {
@@ -1891,6 +1893,7 @@ class StitchAppClient {
         let res = await this.tryLogin(email, password);
 
         if (isNullOrUndefined(res)) {
+            showBreadCrumb("Sincronizzazione dati...");
             let obj = await this.handleApiResult(this.server.fetchAndInitModelIfMissing(collection));
 
             if (obj != null) {
@@ -1924,6 +1927,7 @@ class StitchAppClient {
             let res = await this.tryLogin(email, password);
 
             if (isNullOrUndefined(res)) {
+                showBreadCrumb("Sincronizzazione dati...");
                 let obj = await this.handleApiResult(this.server.fetchAndInitModelIfMissing(collection));
 
                 if (obj != null) {
