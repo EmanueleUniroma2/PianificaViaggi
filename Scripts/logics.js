@@ -146,6 +146,10 @@ var App_Pages = [
                                 },
                                 {
                                   "node_type": "div",
+                                  "node_tags": [["innerHTML", "Modifica questo gruppo"], ["onclick", "editCurrentGroup()"], ["className","generic_button"]]
+                                },
+                                {
+                                  "node_type": "div",
                                   "node_tags": [["innerHTML", "Cancella questo gruppo"], ["onclick", "deleteCurrentGroup()"] ,["className","generic_button"]]
                                 }
                           ]
@@ -197,6 +201,10 @@ var App_Pages = [
       {
         "node_type":"div",
         "node_tags": [["className","page_title"], ["innerHTML", "Il mio profilo"]]
+      },
+      {
+        "node_type": "div",
+        "node_tags": [["innerHTML", "Modifica profilo"],["className","generic_button edit_profile_button"], ["$responsive", "x<750:edit_profile_button_small"], ["onclick", "editProfile()"]]
       },
       {
         "node_type":"div",
@@ -340,8 +348,7 @@ var App_Pages = [
 
 // tell the framework how to prepeare the empty datas that
 // will be later syncked
-const SyncModelsPrototypes = [""];
-
+const SyncModelsPrototypes = ["user_profile"];
 
 // init here db name and realm app name
 const version_label = "Versione 0.4 (non aperto al pubblico)";
@@ -546,8 +553,68 @@ function changeGroup() {
 
 }
 
+function editCurrentGroup() {
+  let current_group = getSelectedGroup();
+  stitchClient.openInputDialog("Inserisci i seguenti campi per creare un gruppo.", [{"title": "Nome del gruppo", "placeholder": "Nome", "start_value": current_group["title"]}, {"title": "Descrizione del gruppo", "placeholder": "Descrizione", "start_value": current_group["description"]}], ["","processEditGroupDialogClick(this)"]);
+}
+
 function createNewGroup(){
-  stitchClient.openInputDialog("Inserisci i seguenti campi per creare un gruppo.", [{"title": "Nome del gruppo", "placeholder": "Nome"}, {"title": "Descrizione del gruppo", "placeholder": "Descrizione"}], ["","processNewGroupDialogClick(this)"]);
+  stitchClient.openInputDialog("Inserisci i seguenti campi per creare un gruppo.", [{"title": "Nome del gruppo", "placeholder": "Nome", "start_value": null}, {"title": "Descrizione del gruppo", "placeholder": "Descrizione", "start_value": null}], ["","processNewGroupDialogClick(this)"]);
+}
+
+function editProfile() {
+  let user_model = getUserModel();
+  stitchClient.openInputDialog("Inserisci i seguenti campi per aggiornare il tuo profilo.", [{"title": "Nome utente", "placeholder": "Nome", "start_value": user_model["name"]}, {"title": "Cognome utente", "placeholder": "Cognome", "start_value": user_model["surname"]}], ["","processEditUserProfileDialogClick(this)"]);
+}
+
+function processEditUserProfileDialogClick() {
+  let result = stitchClient.lastDialogOutput;
+
+  for(let i = 0; i < result.length; i++){
+    if(isVoidString(result[i])){
+      stitchClient.openAlertDialog("Impossibile procedere. Tutti i campi devono essere riempiti.");
+      return;
+    }
+  }
+
+  let user_model = {
+    "name": result[0],
+    "surname": result[1]
+  };
+
+  storageSetItem(user_data_collection_name, "user_profile",user_model);
+  stitchClient.pageNavigate();
+
+  setTimeout(function(){
+    stitchClient.openInfoDialog("Profilo aggiornato con successo.");
+  }, 200);
+}
+
+function processEditGroupDialogClick() {
+
+  let result = stitchClient.lastDialogOutput;
+  let new_edit = getSelectedGroup();
+  let old_id = new_edit["data_id"];
+
+  for(let i = 0; i < result.length; i++){
+    if(isVoidString(result[i])){
+      stitchClient.openAlertDialog("Impossibile procedere. Tutti i campi devono essere riempiti.");
+      return;
+    }
+  }
+
+  new_edit["title"] = result[0];
+  new_edit["description"] = result[1];
+  new_edit["data_id"] = "group_" + stitchClient.getGUIID();
+
+  storageRemoveItem(user_groups_collection_name, old_id);
+  storageSetItem(user_groups_collection_name,new_edit["data_id"],new_edit);
+
+  stitchClient.pageNavigate();
+
+  setTimeout(function(){
+    stitchClient.openInfoDialog("Gruppo modificato con successo: <strong>"+result[0]+"</strong>");
+  }, 200);
 }
 
 function processNewGroupDialogClick() {
@@ -607,8 +674,56 @@ function getSelectedGroup() {
 }
 
 function initUserProfileSection() {
+
   let wrap = document.getElementById("user_profile_info_wrap");
 
-  let name_i = document.createElement("input");
-  
+  let user = getUserModel();
+
+  let voices = [
+    ["Nome", user["name"]],
+    ["Cognome", user["surname"]],
+    ["User Id", user["user_id"]]
+  ];
+
+  for(let i = 0; i < voices.length; i++){
+
+    let voice = voices[i];
+
+    let name_i_lable = document.createElement("div");
+    name_i_lable.className = "user_profile_entry_title";
+    name_i_lable.innerHTML = voice[0];
+
+    let name_i = document.createElement("div");
+    name_i.className = "user_profile_entry";
+
+    if(!isVoidString(voice[1])){
+      name_i.innerHTML = voice[1];
+    }else{
+      name_i.innerHTML = "Sconosciuto";
+    }
+    wrap.appendChild(name_i_lable);
+    wrap.appendChild(name_i);
+  }
+}
+
+
+function getUserModel() {
+
+  let user = storageGetItem("user_profile");
+
+  let model = {
+    "name": null,
+    "surname": null,
+    "user_id": stitchClient.getAuthenticatedId()
+  }
+
+  if(!isNullOrUndefined(user)){
+    model = {
+      "name": user["name"],
+      "surname": user["surname"],
+      "user_id": stitchClient.getAuthenticatedId()
+    }
+  }
+
+  return model;
 }

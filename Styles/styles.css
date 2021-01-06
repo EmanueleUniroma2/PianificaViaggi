@@ -275,5 +275,27 @@ background: rgba(0,0,0,0.2);
   background: linear-gradient(45deg, rgba(255,255,255,0.2), transparent);
 }
 .profile_page_info_wrap{
-
+  padding-top: 2rem;
+}
+.user_profile_entry_title{
+  margin: 0 1rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(45deg, rgba(255,255,255,0.2), transparent);
+}
+.user_profile_entry{
+  margin: 0 1rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(45deg, rgba(0,0,0,0.1), transparent);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(0,0,0,0.4);
+}
+.edit_profile_button {
+  margin: 0 1rem;
+  width: 40.5%;
+  display: inline-block;
+  min-width: 20.6rem;
+  margin-top: 2rem;
+}
+.edit_profile_button_small{
+  width: 84% !important;
 }

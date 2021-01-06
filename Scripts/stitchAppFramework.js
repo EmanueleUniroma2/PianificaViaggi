@@ -291,10 +291,8 @@ class StitchServerClient{
   password = "";
 
   // used to avoid multiple calls in parallel
-  serving_request = false;
   promise_timed_out_flag = "__promise_did_timeout__";
   promise_time_out_duration = 10000;
-  already_serving_flag = "already serving a request";
 
   // init clients
   constructor(app_name, db_name){
@@ -315,7 +313,6 @@ class StitchServerClient{
     let timeout = new Promise((resolve, reject) => {
       let id = setTimeout(() => {
         clearTimeout(id);
-        this.serving_request = false;
 
         let name = promise.name;
         if(name != undefined){
@@ -360,9 +357,6 @@ class StitchServerClient{
   // routine to confirm a user registration
   async confirmUser(){
 
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
-
     let params = this.getUrlParams();
     let token = params["token"];
     let tokenId = params["tokenId"];
@@ -377,16 +371,11 @@ class StitchServerClient{
       console.error("reference_to_mongo_db.confirmUser", e);
     }
 
-    this.serving_request = false;
-
     return res;
   }
 
   // register an user by email and password
   async registerUser(email, password){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let res = null;
 
@@ -398,16 +387,11 @@ class StitchServerClient{
       console.error("reference_to_mongo_db.registerUser", e);
     }
 
-    this.serving_request = false;
-
     return res;
   }
 
   // request send reset password email
   async sendResetPasswordEmail(email){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let res = null;
 
@@ -418,8 +402,6 @@ class StitchServerClient{
       res = e;
       console.error("reference_to_mongo_db.sendResetPasswordEmail", e);
     }
-
-    this.serving_request = false;
 
     return res;
   }
@@ -451,9 +433,6 @@ class StitchServerClient{
   // request resend confirmation email
   async resendConfirmationEmail(email){
 
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
-
     let res = null;
 
     try{
@@ -464,16 +443,11 @@ class StitchServerClient{
       console.error("reference_to_mongo_db.resendConfirmationEmail", e);
     }
 
-    this.serving_request = false;
-
     return res;
   }
 
   // reset user password
   async resetPassword(newPassword){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let params = this.getUrlParams();
     let token = params["token"];
@@ -489,16 +463,11 @@ class StitchServerClient{
       console.error("reference_to_mongo_db.resetPassword", e);
     }
 
-    this.serving_request = false;
-
     return res;
   }
 
   // logout
   async logout(){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let error = null;
 
@@ -516,15 +485,10 @@ class StitchServerClient{
 
     this.killCachedSessionAndCredentials();
 
-    this.serving_request = false;
-
     return error;
   }
 
   async login(email, password){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     console.info("Login for : " + email);
 
@@ -540,16 +504,11 @@ class StitchServerClient{
       console.error("reference_to_mongo_db.login", e);
     }
 
-    this.serving_request = false;
-
     return res;
   }
 
   // develop option to set a developer flag on the db (used to show developer content to developers)
   async setDeveloperFlag(collection, mode){
-
-      if(this.serving_request){return this.already_serving_flag;}
-      this.serving_request = true;
 
       let result = null;
 
@@ -567,16 +526,11 @@ class StitchServerClient{
         }
       }
 
-      this.serving_request = false;
-
       return result;
   }
 
   // remove a single element in a collection
   async remove(collection, data_list){
-
-      if(this.serving_request){return this.already_serving_flag;}
-      this.serving_request = true;
 
       let result = null;
 
@@ -599,7 +553,7 @@ class StitchServerClient{
           console.info("Tryng remove.", data_list);
 
           try{
-            result = await this.promiseTimeout(reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id},patch_arguments,{upsert:true}));
+            result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne({user_id: this.stitch_actual_client.auth.user.id},patch_arguments,{upsert:true}));
             console.info("Done.");
           }
           catch(e){
@@ -608,8 +562,6 @@ class StitchServerClient{
           }
       }
 
-      this.serving_request = false;
-
       return result;
     }
 
@@ -617,9 +569,6 @@ class StitchServerClient{
 
   // patch a single element in a collection
   async patchSingleInCollection(collection, field){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let result = null;
 
@@ -646,15 +595,10 @@ class StitchServerClient{
         }
     }
 
-    this.serving_request = false;
-
     return result;
   }
 
   async findInCollection(collection, search_path){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let result = null;
 
@@ -673,15 +617,10 @@ class StitchServerClient{
       }
     }
 
-    this.serving_request = false;
-
     return result;
   }
 
   async fetch(collection){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let result = null;
 
@@ -700,16 +639,11 @@ class StitchServerClient{
       }
     }
 
-    this.serving_request = false;
-
     return result;
   }
 
 
   async fetchAndInitModelIfMissing(collection){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let result = null;
 
@@ -726,9 +660,7 @@ class StitchServerClient{
         if(result.length == 0){
           console.info("Fetch data is empty, filling first time user.");
 
-          this.serving_request = false;
           await this.promiseTimeout(this.patchInCollection(collection,this.getFirstTimeModel()));
-          this.serving_request = true;
 
           showBreadCrumb("Il tuo account è stato inizializzato.");
           console.info("Done.");
@@ -740,15 +672,10 @@ class StitchServerClient{
       }
     }
 
-    this.serving_request = false;
-
     return result;
   }
 
   async removeInCollection(collection, objectToRemove){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let result = null;
 
@@ -767,15 +694,10 @@ class StitchServerClient{
         }
     }
 
-    this.serving_request = false;
-
     return result;
   }
 
   async postInCollection(collection, objectToPost){
-
-        if(this.serving_request){return this.already_serving_flag;}
-        this.serving_request = true;
 
         let result = null;
 
@@ -793,15 +715,10 @@ class StitchServerClient{
             }
         }
 
-        this.serving_request = false;
-
         return result;
   }
 
   async patchInCollection(collection, data_list){
-
-    if(this.serving_request){return this.already_serving_flag;}
-    this.serving_request = true;
 
     let result = null;
 
@@ -821,7 +738,7 @@ class StitchServerClient{
     if(!this.isAuthenticated()){
       console.error("reference_to_mongo_db.patchInCollection", "user is not authenticated.");
     }else{
-        console.info("Tryng patchInCollection.", collection, data_list, object_id_reference);
+        console.info("Tryng patchInCollection.", collection, data_list);
         try{
           result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne( {user_id: this.stitch_actual_client.auth.user.id}, patch_arguments,{upsert:true}));
           console.info("Done.");
@@ -831,8 +748,6 @@ class StitchServerClient{
           console.error("reference_to_mongo_db.patchInCollection", e);
         }
     }
-
-    this.serving_request = false;
 
     return result;
   }
@@ -1157,8 +1072,15 @@ class StitchAppClient {
         inner_dialog += "<div style=\"margin-top: 0.5rem; text-align: end;\">\n";
 
         for (let i = 0; i < inputs.length; i++) {
+
+          let prefill = isVoidString(inputs[i]["start_value"])? "" : inputs[i]["start_value"];
+
+          if(!isVoidString(prefill)){
+            prefill = " value='"+prefill+"' ";
+          }
+
           inner_dialog += "<div class='stitch_dialog_input_title'>"+inputs[i]["title"]+"</div>\n";
-          inner_dialog += "<input class='stitch_dialog_input' placeholder='"+inputs[i]["placeholder"]+"'></input>\n";
+          inner_dialog += "<input class='stitch_dialog_input' "+prefill+" placeholder='"+inputs[i]["placeholder"]+"'></input>\n";
         }
 
         inner_dialog += "<br>";
@@ -1847,13 +1769,22 @@ class StitchAppClient {
     // then the client must check if the storage updated an item
     // registered for syncking. If yes, synck it
     bewareStorageUpdate(collection, name, obj){
-      this.server.authenticated_models.push(name);
-      this.updateObject(collection, obj);
+      if(this.server.sync_models.indexOf(name) == -1){
+        this.server.authenticated_models.push(name);
+        this.updateObject(collection, obj);
+      }else{
+        this.updateSpecificModel(collection, name);
+      }
     }
+
     // as above but for deletion
     bewareStorageRemoved(collection,name, obj){
-      this.server.authenticated_models = removeElementFromList(this.server.authenticated_models, name);
-      this.removeObject(collection, obj);
+      if(this.server.sync_models.indexOf(name) == -1){
+        this.server.authenticated_models = removeElementFromList(this.server.authenticated_models, name);
+        this.removeObject(collection, obj);
+      }else{
+        this.deleteRemoteSpecificField(collection, name);        
+      }
     }
 
     // update all the remote models marked for sinkyng
