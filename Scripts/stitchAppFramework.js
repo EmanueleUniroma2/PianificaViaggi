@@ -11,6 +11,13 @@ function getStitchAppClient(app_name, db_name) {
     return lastInitedAppClient;
 }
 
+function removeElementFromListAtIndex(list, index) {
+    if (index > -1) {
+        list.splice(index, 1);
+    }
+    return list;
+}
+
 function removeElementFromList(list, element) {
     let index = list.indexOf(element);
     if (index > -1) {
@@ -316,6 +323,10 @@ class StitchServerClient {
     promise_timed_out_flag = "__promise_did_timeout__";
     promise_time_out_duration = 10000;
 
+    // multiple api call in parallel are not supported by
+    // the stitch client so we must enable a serving queue
+    alreadyServing = false;
+
     // init clients
     constructor(app_name, db_name) {
         this.app_name = app_name;
@@ -323,6 +334,31 @@ class StitchServerClient {
         this.stitch_actual_client = stitch.Stitch.initializeDefaultAppClient(this.app_name);
         this.reference_to_mongo_db = this.stitch_actual_client.getServiceClient(stitch.RemoteMongoClient.factory, 'mongodb-atlas').db(this.db_name);
         this.profileProvider = this.stitch_actual_client.auth.getProviderClient(stitch.UserPasswordAuthProviderClient.factory, "local-userpass");
+    }
+
+    async pause(milliseconds){
+      return new Promise(resolve => setTimeout(resolve, milliseconds))
+    }
+
+    // function to get lock on api service
+    async getApiLock(){
+      let max_retry = 5;
+      while(this.alreadyServing && max_retry > 0){
+        await pause(500);
+        max_retry--;
+      }
+      this.alreadyServing = true;
+      return true;
+    }
+
+    // unlock api
+    apiUnlock(){
+      this.alreadyServing = false;
+    }
+
+    // unlock api
+    apiLock(){
+      this.alreadyServing = true;
     }
 
     /*
@@ -379,6 +415,8 @@ class StitchServerClient {
     // routine to confirm a user registration
     async confirmUser() {
 
+        await this.getApiLock();
+
         let params = this.getUrlParams();
         let token = params["token"];
         let tokenId = params["tokenId"];
@@ -392,11 +430,15 @@ class StitchServerClient {
             console.error("reference_to_mongo_db.confirmUser", e);
         }
 
+        this.apiUnlock();
+
         return res;
     }
 
     // register an user by email and password
     async registerUser(email, password) {
+
+        await this.getApiLock();
 
         let res = null;
 
@@ -407,11 +449,15 @@ class StitchServerClient {
             console.error("reference_to_mongo_db.registerUser", e);
         }
 
+        this.apiUnlock();
+
         return res;
     }
 
     // request send reset password email
     async sendResetPasswordEmail(email) {
+
+        await this.getApiLock();
 
         let res = null;
 
@@ -421,6 +467,8 @@ class StitchServerClient {
             res = e;
             console.error("reference_to_mongo_db.sendResetPasswordEmail", e);
         }
+
+        this.apiUnlock();
 
         return res;
     }
@@ -473,6 +521,8 @@ class StitchServerClient {
     // request resend confirmation email
     async resendConfirmationEmail(email) {
 
+        await this.getApiLock();
+
         let res = null;
 
         try {
@@ -482,11 +532,15 @@ class StitchServerClient {
             console.error("reference_to_mongo_db.resendConfirmationEmail", e);
         }
 
+        this.apiUnlock();
+
         return res;
     }
 
     // reset user password
     async resetPassword(newPassword) {
+
+        await this.getApiLock();
 
         let params = this.getUrlParams();
         let token = params["token"];
@@ -501,11 +555,15 @@ class StitchServerClient {
             console.error("reference_to_mongo_db.resetPassword", e);
         }
 
+        this.apiUnlock();
+
         return res;
     }
 
     // logout
     async logout() {
+
+        await this.getApiLock();
 
         let error = null;
 
@@ -522,10 +580,14 @@ class StitchServerClient {
 
         this.killCachedSessionAndCredentials();
 
+        this.apiUnlock();
+
         return error;
     }
 
     async login(email, password) {
+
+        await this.getApiLock();
 
         console.info("Login for : " + email);
 
@@ -540,11 +602,15 @@ class StitchServerClient {
             console.error("reference_to_mongo_db.login", e);
         }
 
+        this.apiUnlock();
+
         return res;
     }
 
     // develop option to set a developer flag on the db (used to show developer content to developers)
     async setDeveloperFlag(collection, mode) {
+
+        await this.getApiLock();
 
         let result = null;
 
@@ -569,11 +635,15 @@ class StitchServerClient {
             }
         }
 
+        this.apiUnlock();
+
         return result;
     }
 
     // remove a single element in a collection
     async remove(collection, data_list) {
+
+        await this.getApiLock();
 
         let result = null;
 
@@ -610,6 +680,8 @@ class StitchServerClient {
             }
         }
 
+        this.apiUnlock();
+
         return result;
     }
 
@@ -617,6 +689,8 @@ class StitchServerClient {
 
     // patch a single element in a collection
     async patchSingleInCollection(collection, field) {
+
+        await this.getApiLock();
 
         let result = null;
 
@@ -648,10 +722,14 @@ class StitchServerClient {
             }
         }
 
+        this.apiUnlock();
+
         return result;
     }
 
     async findInCollection(collection, search_path) {
+
+        await this.getApiLock();
 
         let result = null;
 
@@ -669,10 +747,14 @@ class StitchServerClient {
             }
         }
 
+        this.apiUnlock();
+
         return result;
     }
 
     async fetch(collection) {
+
+        await this.getApiLock();
 
         let result = null;
 
@@ -692,11 +774,15 @@ class StitchServerClient {
             }
         }
 
+        this.apiUnlock();
+
         return result;
     }
 
 
     async fetchAndInitModelIfMissing(collection) {
+
+        await this.getApiLock();
 
         let result = null;
 
@@ -715,7 +801,9 @@ class StitchServerClient {
                 if (result.length == 0) {
                     console.info("Fetch data is empty, filling first time user.");
 
+                    this.apiUnlock();
                     await this.promiseTimeout(this.patchInCollection(collection, this.getFirstTimeModel()));
+                    this.apiLock();
 
                     showBreadCrumb("Il tuo account è stato inizializzato.");
                     console.info("Done.");
@@ -726,10 +814,14 @@ class StitchServerClient {
             }
         }
 
+        this.apiUnlock();
+
         return result;
     }
 
     async removeInCollection(collection, objectToRemove) {
+
+        await this.getApiLock();
 
         let result = null;
 
@@ -750,10 +842,14 @@ class StitchServerClient {
             }
         }
 
+        this.apiUnlock();
+
         return result;
     }
 
     async postInCollection(collection, objectToPost) {
+
+        await this.getApiLock();
 
         let result = null;
 
@@ -777,10 +873,14 @@ class StitchServerClient {
             }
         }
 
+        this.apiUnlock();
+
         return result;
     }
 
     async patchInCollection(collection, data_list) {
+
+        await this.getApiLock();
 
         let result = null;
 
@@ -815,6 +915,8 @@ class StitchServerClient {
                 console.error("reference_to_mongo_db.patchInCollection", e);
             }
         }
+
+        this.apiUnlock();
 
         return result;
     }

@@ -197,6 +197,12 @@ var App_Pages = [{
                     ["className", "home_group_description"]
                 ],
             }, {
+                "node_type": "div",
+                "node_tags": [
+                    ["id", "invited_users"],
+                    ["className", "invited_users_area"]
+                ],
+            }, {
                 "node_type": "table",
                 "node_tags": [
                     ["className", "home_squares_wrapper"]
@@ -565,6 +571,7 @@ async function loadRemoteGroups(){
 
   if (!isNullOrUndefined(your_groups)) {
       for (let i = 0; i < your_groups.length; i++) {
+          delete your_groups[i]["_id"];
           localStorage.setItem(your_groups[i]["data_id"], JSON.stringify(your_groups[i]));
       }
   }
@@ -712,9 +719,83 @@ function changeGroup() {
 
     let current_group = getSelectedGroup();
 
+    let invited_users = current_group["invited_users"];
+
     document.getElementById("home_group_title").innerHTML = current_group["title"];
     document.getElementById("home_group_description").innerHTML = current_group["description"];
 
+    let inv_users_area = document.getElementById("invited_users");
+
+    if(!isNullOrUndefined(inv_users_area)){
+
+      while(inv_users_area.firstChild){
+        inv_users_area.removeChild(inv_users_area.firstChild);
+      }
+
+      if(invited_users.length > 0){
+        inv_users_area.style.display = "block";
+        let invited_title = document.createElement("div");
+        invited_title.className = "invited_title_label";
+        invited_title.innerHTML = "Utenti nel gruppo oltre te";
+        inv_users_area.appendChild(invited_title);
+      }else{
+        inv_users_area.style.display = "none";
+      }
+
+
+      for(let i = 0; i < invited_users.length;i++){
+
+        let invit = document.createElement("div");
+        invit.className = "invited_users_slot";
+        invit.setAttribute("onclick", "removeUserFromCurrentGroup(this)");
+        let invit_name = document.createElement("div");
+        invit_name.className = "invited_users_slot_name";
+        invit_name.innerHTML = invited_users[i][0];
+        let invit_id = document.createElement("div");
+        invit_id.className = "invited_users_slot_id";
+        invit_id.innerHTML = "ID: " + invited_users[i][1];
+
+        invit.appendChild(invit_name);
+        invit.appendChild(invit_id);
+
+        inv_users_area.appendChild(invit);
+      }
+    }
+}
+
+function removeUserFromCurrentGroup(element) {
+
+  let user_to_remove_id = element.children[1].innerHTML.replace("ID: ","");
+
+  let current_group = getSelectedGroup();
+
+  let invited = current_group["invited_users"];
+  let invited_ids = current_group["invited_users_ids_only"];
+
+  let remove_index = -1;
+  for(let i = 0; i < invited_ids.length; i++){
+    if(invited_ids[i] == user_to_remove_id){
+      remove_index = i;
+      break;
+    }
+  }
+
+  if(remove_index != -1){
+
+    invited = removeElementFromListAtIndex(invited, remove_index);
+    invited_ids = removeElementFromListAtIndex(invited_ids, remove_index);
+
+    current_group["invited_users"] = invited;
+    current_group["invited_users_ids_only"] = invited_ids;
+
+    storageSetItem(user_groups_collection_name, current_group["data_id"], current_group);
+
+    changeGroup();
+
+    setTimeout(function() {
+        stitchClient.openInfoDialog("Utente rimosso con successo");
+    }, 200);
+  }
 }
 
 function editCurrentGroup() {
@@ -798,7 +879,7 @@ function processEditGroupDialogClick() {
     storageRemoveItem(user_groups_collection_name, old_id);
     storageSetItem(user_groups_collection_name, new_edit["data_id"], new_edit);
 
-    stitchClient.pageNavigate();
+    changeGroup();
 
     setTimeout(function() {
         stitchClient.openInfoDialog("Gruppo modificato con successo: <strong>" + result[0] + "</strong>");
@@ -824,7 +905,12 @@ function processNewGroupDialogClick() {
     };
 
     storageSetItem(user_groups_collection_name, group["data_id"], group);
+
     stitchClient.pageNavigate();
+
+    document.getElementById("group_select").value = group["data_id"];
+
+    changeGroup();
 
     setTimeout(function() {
         stitchClient.openInfoDialog("Gruppo creato con successo: <strong>" + result[0] + "</strong>");
@@ -868,9 +954,9 @@ function inviteOnCurrentGroupConclude() {
     invited_ids.push(result[1]);
     current_group["invited_users_ids_only"] = invited_ids;
 
-
     storageSetItem(user_groups_collection_name, current_group["data_id"], current_group);
-    stitchClient.pageNavigate();
+
+    changeGroup();
 
     setTimeout(function() {
         stitchClient.openInfoDialog("Utente invitato con successo: <strong>" + result[0] + "</strong>");
