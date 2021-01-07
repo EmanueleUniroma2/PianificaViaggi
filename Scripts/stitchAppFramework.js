@@ -1788,12 +1788,12 @@ class StitchAppClient {
 
     // send a single object on the collection
     async updateObject(collection, obj) {
-        await this.server.promiseTimeout(this.server.postInCollection(collection, obj));
+        await this.handleApiResult(this.server.promiseTimeout(this.server.postInCollection(collection, obj)));
     }
 
     // delete a single object on the collection
     async removeObject(collection, obj) {
-        await this.server.promiseTimeout(this.server.removeInCollection(collection, obj));
+        await this.handleApiResult(this.server.promiseTimeout(this.server.removeInCollection(collection, obj)));
     }
 
     // if the storage is updated, the client is notified
