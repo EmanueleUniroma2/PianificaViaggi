@@ -344,20 +344,23 @@ class StitchServerClient {
     async getApiLock(){
       let max_retry = 5;
       while(this.alreadyServing && max_retry > 0){
-        await pause(500);
+        await this.pause(500);
         max_retry--;
       }
+      console.log("Given lock");
       this.alreadyServing = true;
       return true;
     }
 
     // unlock api
     apiUnlock(){
+      console.log("Released lock");
       this.alreadyServing = false;
     }
 
     // unlock api
     apiLock(){
+      console.log("Force given lock");
       this.alreadyServing = true;
     }
 
@@ -1575,6 +1578,10 @@ class StitchAppClient {
 
         let el = document.createElement(type);
 
+        if(type.substring(0, "functionResult".length) == "functionResult"){
+          el.appendChild(window[type.split("-")[1]]());
+        }
+
         if (!isNullOrUndefined(moreFlags)) {
 
             for (let i = 0; i < moreFlags.length; i++) {
@@ -1589,12 +1596,12 @@ class StitchAppClient {
                 }
                 // standard flags
                 else {
-                    // you can init a flag with a '$call_' to call a function named as
-                    // the rest of the string e.g: $call_foo will call foo() and init content with the
+                    // you can init a flag with a '$_' to call a function named as
+                    // the rest of the string e.g: $foo will call foo() and init content with the
                     // returned value
-                    if (content.substring(0, "$call_".length) == "$call_") {
+                    if (content.substring(0, "$".length) == "$") {
                         try {
-                            content = window[content.substring("$call_".length)]();
+                            content = window[content.substring("$".length)]();
                         } catch (e) {
                             content = "";
                         }

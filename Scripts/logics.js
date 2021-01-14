@@ -123,7 +123,7 @@ var App_Pages = [{
             }, {
                 "node_type": "div",
                 "node_tags": [
-                    ["innerHTML", "$call_getLoggedEmail"],
+                    ["innerHTML", "$getLoggedEmail"],
                     ["className", "toolbar_button"],
                     ["onclick", "openToolbarMenu(this)"]
                 ]
@@ -165,7 +165,7 @@ var App_Pages = [{
                 ["id", "group_select"],
                 ["onchange", "changeGroup()"],
                 ["className", "generic_select new_group_select"],
-                ["$responsive", "x<750:new_group_select_small"]
+                ["$responsive", "x<1050:new_group_select_small"]
             ],
             "node_afterinit": "initGroupSelect"
         }, {
@@ -173,7 +173,7 @@ var App_Pages = [{
             "node_tags": [
                 ["innerHTML", "Crea un nuovo gruppo"],
                 ["className", "generic_button new_group_button"],
-                ["$responsive", "x<750:new_group_button_small"],
+                ["$responsive", "x<1050:new_group_button_small"],
                 ["onclick", "createNewGroup()"]
             ]
         }, {
@@ -214,13 +214,34 @@ var App_Pages = [{
                         "node_type": "td",
                         "node_tags": [
                             ["className", "home_left_square"],
-                            ["$responsive", "x<750:home_left_square_small"]
+                            ["$responsive", "x<1050:home_left_square_small"]
                         ],
                         "node_childs": [{
                             "node_type": "div",
                             "node_tags": [
-                                ["innerHTML", "Inserisci le tue date"],
-                                ["onclick", "insertMyDatesForCurrentGroup()"],
+                                ["innerHTML", "Calcola giorni ottimali"],
+                                ["onclick", "computeGroupSolution()"],
+                                ["className", "generic_button"]
+                            ]
+                        }, {
+                            "node_type": "div",
+                            "node_tags": [
+                                ["innerHTML", "Imposta date selezionate: PESSIME"],
+                                ["onclick", "setSelectedDates(1)"],
+                                ["className", "generic_button"]
+                            ]
+                        }, {
+                            "node_type": "div",
+                            "node_tags": [
+                                ["innerHTML", "Imposta date selezionate: FORSE"],
+                                ["onclick", "setSelectedDates(2)"],
+                                ["className", "generic_button"]
+                            ]
+                        }, {
+                            "node_type": "div",
+                            "node_tags": [
+                                ["innerHTML", "Imposta date selezionate: OTTIME"],
+                                ["onclick", "setSelectedDates(3)"],
                                 ["className", "generic_button"]
                             ]
                         }, {
@@ -249,13 +270,11 @@ var App_Pages = [{
                         "node_type": "td",
                         "node_tags": [
                             ["className", "home_right_square"],
-                            ["$responsive", "x<750:home_right_square_small"]
+                            ["$responsive", "x<1050:home_right_square_small"]
                         ],
                         "node_childs": [{
-                            "node_type": "div",
-                            "node_tags": [
-                                ["innerHTML", "Sezione destra"]
-                            ]
+                            "node_type": "functionResult-calendarView",
+                            "node_tags": [["id", "calendar_grid_view"]]
                         }]
                     }]
                 }]
@@ -285,7 +304,7 @@ var App_Pages = [{
             }, {
                 "node_type": "div",
                 "node_tags": [
-                    ["innerHTML", "$call_getLoggedEmail"],
+                    ["innerHTML", "$getLoggedEmail"],
                     ["className", "toolbar_button"],
                     ["onclick", "openToolbarMenu(this)"]
                 ]
@@ -302,7 +321,7 @@ var App_Pages = [{
         "node_tags": [
             ["innerHTML", "Modifica profilo"],
             ["className", "generic_button edit_profile_button"],
-            ["$responsive", "x<750:edit_profile_button_small"],
+            ["$responsive", "x<1050:edit_profile_button_small"],
             ["onclick", "editProfile()"]
         ]
     }, {
@@ -899,6 +918,7 @@ function processNewGroupDialogClick() {
     let group = {
         "title": result[0],
         "description": result[1],
+        "dates_values":{},
         "invited_users": [],
         "invited_users_ids_only": [],
         "data_id": "group_" + stitchClient.getGUIID()
@@ -917,9 +937,8 @@ function processNewGroupDialogClick() {
     }, 200);
 }
 
-function insertMyDatesForCurrentGroup() {
-    let selected = document.getElementById("group_select").value;
-
+function computeGroupSolution() {
+  stitchClient.openInfoDialog("Questa funzione non è ancora disponibile");
 }
 
 function inviteOnCurrentGroup() {
@@ -1041,4 +1060,318 @@ function getUserModel() {
     }
 
     return model;
+}
+
+
+function dateBackOneDay(dateObj){
+  dateObj.setDate(dateObj.getDate()-1);
+  return dateObj;
+}
+
+function dateForwardOneDay(dateObj){
+  dateObj.setDate(dateObj.getDate()+1);
+  return dateObj;
+}
+
+
+function getMonthLabel(i) {
+  if(i == 0){return "Gennaio";}
+  if(i == 1){return "Febbraio";}
+  if(i == 2){return "Marzo";}
+  if(i == 3){return "Aprile";}
+  if(i == 4){return "Maggio";}
+  if(i == 5){return "Giugno";}
+  if(i == 6){return "Luglio";}
+  if(i == 7){return "Agosto";}
+  if(i == 8){return "Settembre";}
+  if(i == 9){return "Ottobre";}
+  if(i == 10){return "Novembre";}
+  if(i == 11){return "Dicembre";}
+  return "";
+}
+
+function convertEnglToIt(i) {
+  if(i == 0){ return "Dom";}
+  if(i == 1){ return "Lun";}
+  if(i == 2){ return "Mar";}
+  if(i == 3){ return "Mer";}
+  if(i == 4){ return "Gio";}
+  if(i == 5){ return "Ven";}
+  if(i == 6){ return "Sab";}
+  return "";
+}
+
+function getDateMonthGrid(year,month){
+
+  let date = new Date(year,month,1);
+  date.setDate(date.getDate()-7);
+
+  let grid = [];
+
+  for(let i = 0; i < 50; i++){
+
+    date = dateForwardOneDay(date);
+    grid.push({
+      "is_in_month": date.getMonth() == month,
+      "year": date.getFullYear(),
+      "month": getMonthLabel(date.getMonth()),
+      "day": convertEnglToIt(date.getDay()),
+      "number": date.getDate(),
+    });
+  }
+
+  let shifted_grid = [];
+  let foundDom = false;
+  for(let i = 0; i < grid.length && shifted_grid.length < 42; i++){
+    if(grid[i].day == "Dom"){
+      foundDom = true;
+    }
+    if(foundDom){
+      shifted_grid.push(grid[i]);
+    }
+  }
+
+
+  return shifted_grid;
+}
+
+
+function getMonthNumberFromLabel(label) {
+  let months = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+
+  return months.indexOf(label.toLowerCase());
+}
+
+function calendarMonthForward() {
+
+  let calendar = document.getElementById("calendar_grid_view");
+  let current = document.getElementById("current_month_year_label").innerHTML;
+  let spl = current.split(" ");
+  let month = getMonthNumberFromLabel(spl[0]);
+  let year = spl[1];
+
+  while(calendar.firstChild){
+    calendar.removeChild(calendar.firstChild);
+  }
+
+  let date = new Date(year, month, 1);
+  date.setMonth(date.getMonth() + 1);
+
+  calendar.appendChild(calendarViewBuildFromDate(date));
+}
+
+function calendarMonthBack() {
+
+  let calendar = document.getElementById("calendar_grid_view");
+  let current = document.getElementById("current_month_year_label").innerHTML;
+  let spl = current.split(" ");
+  let month = getMonthNumberFromLabel(spl[0]);
+  let year = spl[1];
+
+  while(calendar.firstChild){
+    calendar.removeChild(calendar.firstChild);
+  }
+
+  let date = new Date(year, month, 1);
+  date.setMonth(date.getMonth() - 1);
+
+  calendar.appendChild(calendarViewBuildFromDate(date));
+}
+
+function calendarView() {
+  let today = new Date();
+  return calendarViewBuildFromDate(today);
+}
+
+function calendarViewBuildFromDate(today) {
+
+  if(isNullOrUndefined(getSelectedGroup())){
+    return document.createElement("div");
+  }
+
+  let fill_grid = getDateMonthGrid(today.getFullYear(), today.getMonth());
+
+  let calendar_table_wrap = document.createElement("div");
+  calendar_table_wrap.className = "calendar-table-wrap";
+
+  let nav_buttons = document.createElement("div");
+  nav_buttons.className = "calendar-table-nav-buttons-wrap";
+
+  let prev_month = document.createElement("div");
+  prev_month.innerHTML = "‹";
+  prev_month.className = "calendar-table-prev-month";
+  prev_month.onclick = calendarMonthBack;
+  let month_year_label = document.createElement("div");
+  month_year_label.id = "current_month_year_label";
+  month_year_label.innerHTML = getMonthLabel(today.getMonth())+ " " + today.getFullYear().toString();
+  month_year_label.className = "calendar-table-month-label";
+  let next_month = document.createElement("div");
+  next_month.innerHTML = "›";
+  next_month.onclick = calendarMonthForward;
+  next_month.className = "calendar-table-next-month";
+
+
+
+  nav_buttons.appendChild(prev_month);
+  nav_buttons.appendChild(month_year_label);
+  nav_buttons.appendChild(next_month);
+
+  calendar_table_wrap.appendChild(nav_buttons);
+
+  let calendar_table = document.createElement("table");
+  calendar_table.className = "calendar-table";
+
+  let headers = document.createElement("tr");
+  let days =  ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+
+  for(let i = 0; i < days.length; i++){
+    let header_box = document.createElement("td");
+    header_box.innerHTML = days[i];
+    header_box.className = "calendar-box-header";
+    headers.appendChild(header_box);
+  }
+  calendar_table.appendChild(headers);
+
+  for(let i = 0; i < 6; i++){
+
+    let calendar_row = document.createElement("tr");
+
+    for(let j = 0; j < 7; j++){
+
+      let correct_grid_element = fill_grid[i*7 + j];
+
+      let calendar_box = document.createElement("td");
+
+      let key_date = today.getFullYear().toString() + "_" + today.getMonth() + "_" + correct_grid_element["number"].toString();
+
+      calendar_box.innerHTML = "<div>"+correct_grid_element["number"] + "</div><div class=\"other-voters-wrap\"></div>";
+
+      if(!correct_grid_element["is_in_month"]){
+        calendar_box.className = "calendar-box-not-in-month";
+      }else{
+        setupCalendarBoxBasedOnDayStatuses(calendar_box, key_date);
+        calendar_box.setAttribute("onclick", "dateBoxSelected(this)");
+      }
+
+      calendar_row.appendChild(calendar_box);
+    }
+
+    calendar_table.appendChild(calendar_row);
+  }
+
+
+  calendar_table_wrap.appendChild(calendar_table);
+
+  return calendar_table_wrap;
+
+}
+
+function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
+{
+
+  let group = getSelectedGroup();
+  let keymap = Object.keys(group["dates_values"]);
+
+  if(keymap.length == 0){
+    calendar_box.className = "calendar-box";
+  }else{
+    calendar_box.className = "none";
+  }
+
+  for(let i = 0; i < keymap.length; i++){
+
+    let current_key_spl = keymap[i].split("___");
+    let element = group["dates_values"][keymap[i]];
+
+    if(calendar_box.className == "none"){
+      calendar_box.className = "calendar-box";
+    }
+
+    if(current_key_spl[1] == related_div_date && current_key_spl[0] != getLoggedEmail()){
+
+      let other_voter_ball = document.createElement("div");
+      if(element == 1){
+        other_voter_ball.className = "other_voter_ball other_voter_ball_red";
+      }
+      if(element == 2){
+        other_voter_ball.className = "other_voter_ball other_voter_ball_yellow";
+      }
+      if(element == 3){
+        other_voter_ball.className = "other_voter_ball other_voter_ball_green";
+      }
+
+      calendar_box.children[1].appendChild(other_voter_ball);
+    }
+
+    if(current_key_spl[1] == related_div_date && current_key_spl[0] == getLoggedEmail()){
+      if(element == 1){
+        calendar_box.className = "calendar-box calendar-box-pessimo";
+      }
+      if(element == 2){
+        calendar_box.className = "calendar-box calendar-box-non-so";
+      }
+      if(element == 3){
+        calendar_box.className = "calendar-box calendar-box-ottimo";
+      }
+    }
+
+  }
+}
+
+
+
+
+
+function dateBoxSelected(item) {
+  item.classList.toggle("calendar-box-selected");
+}
+
+function setSelectedDates(level) {
+
+  let boxes_l = document.getElementsByClassName("calendar-box-selected");
+  let boxes = [];
+  for(let i = 0; i < boxes_l.length; i++){
+    boxes.push(boxes_l[i]);
+  }
+
+  for(let i = 0; i < boxes.length; i++){
+    let clicked_datebox_full_label = getFullSlotDateLabel(boxes[i].children[0].innerHTML);
+
+    setGroupDateStatus(clicked_datebox_full_label,level);
+  }
+
+  let group = getSelectedGroup();
+  storageSetItem(user_groups_collection_name, group["data_id"], group);
+
+  redrawCalendar();
+}
+
+function redrawCalendar() {
+  let calendar = document.getElementById("calendar_grid_view");
+  let current = document.getElementById("current_month_year_label").innerHTML;
+  let spl = current.split(" ");
+  let month = getMonthNumberFromLabel(spl[0]);
+  let year = spl[1];
+
+  while(calendar.firstChild){
+    calendar.removeChild(calendar.firstChild);
+  }
+  let date = new Date(year, month, 1);
+  calendar.appendChild(calendarViewBuildFromDate(date));
+}
+
+
+function getFullSlotDateLabel(dayNumber) {
+  let current = document.getElementById("current_month_year_label").innerHTML;
+  let spl = current.split(" ");
+  let month = getMonthNumberFromLabel(spl[0]);
+  let year = spl[1];
+  return year.toString()+"_"+month.toString()+"_"+dayNumber.toString();
+}
+
+
+function setGroupDateStatus(date_label, date_status){
+  let group = getSelectedGroup();
+  group["dates_values"][getLoggedEmail() + "___" + date_label] = date_status;
+  storageSetItem("", group["data_id"], group);
 }
