@@ -798,6 +798,8 @@ function changeGroup() {
       document.getElementById("invite_group_button").style.display = "none";
       document.getElementById("edit_group_button").style.display = "none";
     }
+
+    redrawCalendar();
 }
 
 
@@ -1232,8 +1234,6 @@ function calendarViewBuildFromDate(today) {
   next_month.onclick = calendarMonthForward;
   next_month.className = "calendar-table-next-month";
 
-
-
   nav_buttons.appendChild(prev_month);
   nav_buttons.appendChild(month_year_label);
   nav_buttons.appendChild(next_month);
@@ -1301,7 +1301,6 @@ function getDatesValuesKeySet(group){
 
 function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
 {
-
   let group = getSelectedGroup();
   let keymap = getDatesValuesKeySet(group);
 
