@@ -918,7 +918,6 @@ function processNewGroupDialogClick() {
     let group = {
         "title": result[0],
         "description": result[1],
-        "dates_values":{},
         "invited_users": [],
         "invited_users_ids_only": [],
         "data_id": "group_" + stitchClient.getGUIID()
@@ -1266,11 +1265,22 @@ function calendarViewBuildFromDate(today) {
 
 }
 
+function getDatesValuesKeySet(group){
+  let keymap = Object.keys(group);
+  let dates_keys = [];
+  for(let i = 0; i < keymap.length; i++){
+    if(keymap[i].substr(0,"user_dates_".length) == "user_dates_"){
+      dates_keys.push(keymap[i]);
+    }
+  }
+  return dates_keys;
+}
+
 function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
 {
 
   let group = getSelectedGroup();
-  let keymap = Object.keys(group["dates_values"]);
+  let keymap = getDatesValuesKeySet(group);
 
   if(keymap.length == 0){
     calendar_box.className = "calendar-box";
@@ -1280,38 +1290,43 @@ function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
 
   for(let i = 0; i < keymap.length; i++){
 
-    let current_key_spl = keymap[i].split("___");
-    let element = group["dates_values"][keymap[i]];
+    let user_group_values = group[keymap[i]];
+    let key_user = replaceAll(keymap[i].substr("user_dates_".length), "_",".");
 
-    if(calendar_box.className == "none"){
-      calendar_box.className = "calendar-box";
-    }
+    for(let j = 0; j < user_group_values.length; j++){
 
-    if(current_key_spl[1] == related_div_date && current_key_spl[0] != getLoggedEmail()){
+      let element = user_group_values[j];
 
-      let other_voter_ball = document.createElement("div");
-      if(element == 1){
-        other_voter_ball.className = "other_voter_ball other_voter_ball_red";
-      }
-      if(element == 2){
-        other_voter_ball.className = "other_voter_ball other_voter_ball_yellow";
-      }
-      if(element == 3){
-        other_voter_ball.className = "other_voter_ball other_voter_ball_green";
+      if(calendar_box.className == "none"){
+        calendar_box.className = "calendar-box";
       }
 
-      calendar_box.children[1].appendChild(other_voter_ball);
-    }
+      if(element["l"] == related_div_date && key_user != getLoggedEmail()){
 
-    if(current_key_spl[1] == related_div_date && current_key_spl[0] == getLoggedEmail()){
-      if(element == 1){
-        calendar_box.className = "calendar-box calendar-box-pessimo";
+        let other_voter_ball = document.createElement("div");
+        if(element["s"] == 1){
+          other_voter_ball.className = "other_voter_ball other_voter_ball_red";
+        }
+        if(element["s"] == 2){
+          other_voter_ball.className = "other_voter_ball other_voter_ball_yellow";
+        }
+        if(element["s"] == 3){
+          other_voter_ball.className = "other_voter_ball other_voter_ball_green";
+        }
+
+        calendar_box.children[1].appendChild(other_voter_ball);
       }
-      if(element == 2){
-        calendar_box.className = "calendar-box calendar-box-non-so";
-      }
-      if(element == 3){
-        calendar_box.className = "calendar-box calendar-box-ottimo";
+
+      if(element["l"] == related_div_date && key_user == getLoggedEmail()){
+        if(element["s"] == 1){
+          calendar_box.className = "calendar-box calendar-box-pessimo";
+        }
+        if(element["s"] == 2){
+          calendar_box.className = "calendar-box calendar-box-non-so";
+        }
+        if(element["s"] == 3){
+          calendar_box.className = "calendar-box calendar-box-ottimo";
+        }
       }
     }
 
@@ -1369,9 +1384,47 @@ function getFullSlotDateLabel(dayNumber) {
   return year.toString()+"_"+month.toString()+"_"+dayNumber.toString();
 }
 
+function replaceAll(str,old,new_) {
+  while(str.indexOf(old) != -1){
+    str = str.replace(old,new_);
+  }
+  return str;
+}
 
 function setGroupDateStatus(date_label, date_status){
   let group = getSelectedGroup();
-  group["dates_values"][getLoggedEmail() + "___" + date_label] = date_status;
+
+  let user_key = "user_dates_"+getLoggedEmail();
+  user_key = replaceAll(user_key,".","_");
+
+  let target = {"l":date_label, "s":date_status};
+
+  if(isNullOrUndefined(group[user_key])){
+    group[user_key] = [];
+  }
+
+  let index = getGroupUserDateIndex(group[user_key], target);
+
+  if(index == -1){
+    group[user_key].push(target);
+  }else{
+    group[user_key][index] = target;
+  }
+
   storageSetItem("", group["data_id"], group);
+}
+
+
+function getGroupUserDateIndex(list, target) {
+
+  let index = -1;
+
+  for(let i = 0; i < list.length; i++){
+    let el = list[i];
+    if(el["l"] == target["l"]){
+      return i;
+    }
+  }
+
+  return index;
 }
