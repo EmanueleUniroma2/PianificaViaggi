@@ -247,6 +247,7 @@ var App_Pages = [{
                         }, {
                             "node_type": "div",
                             "node_tags": [
+                                ["id", "invite_group_button"],
                                 ["innerHTML", "Invita su questo gruppo"],
                                 ["onclick", "inviteOnCurrentGroup()"],
                                 ["className", "generic_button"]
@@ -254,6 +255,7 @@ var App_Pages = [{
                         }, {
                             "node_type": "div",
                             "node_tags": [
+                                ["id", "edit_group_button"],
                                 ["innerHTML", "Modifica questo gruppo"],
                                 ["onclick", "editCurrentGroup()"],
                                 ["className", "generic_button"]
@@ -261,6 +263,7 @@ var App_Pages = [{
                         }, {
                             "node_type": "div",
                             "node_tags": [
+                                ["id", "delete_group_button"],
                                 ["innerHTML", "Cancella questo gruppo"],
                                 ["onclick", "deleteCurrentGroup()"],
                                 ["className", "generic_button"]
@@ -740,51 +743,70 @@ function changeGroup() {
 
     let invited_users = current_group["invited_users"];
 
-    document.getElementById("home_group_title").innerHTML = current_group["title"];
     document.getElementById("home_group_description").innerHTML = current_group["description"];
 
     let inv_users_area = document.getElementById("invited_users");
+    while(inv_users_area.firstChild){
+      inv_users_area.removeChild(inv_users_area.firstChild);
+    }
 
-    if(!isNullOrUndefined(inv_users_area)){
+    let you_are_admin_of_the_group = current_group["owner_email"] == getLoggedEmail();
 
-      while(inv_users_area.firstChild){
-        inv_users_area.removeChild(inv_users_area.firstChild);
+    if(you_are_admin_of_the_group){
+
+      document.getElementById("home_group_title").innerHTML = current_group["title"];
+
+      document.getElementById("delete_group_button").style.display = "";
+      document.getElementById("invite_group_button").style.display = "";
+      document.getElementById("edit_group_button").style.display = "";
+
+      if(!isNullOrUndefined(inv_users_area)){
+
+        if(invited_users.length > 0){
+          inv_users_area.style.display = "block";
+          let invited_title = document.createElement("div");
+          invited_title.className = "invited_title_label";
+          invited_title.innerHTML = "Utenti che hai invitato";
+          inv_users_area.appendChild(invited_title);
+        }else{
+          inv_users_area.style.display = "none";
+        }
+
+        for(let i = 0; i < invited_users.length;i++){
+
+          let invit = document.createElement("div");
+          invit.className = "invited_users_slot";
+          invit.setAttribute("onclick", "askRemoveUserFromCurrentGroup(this)");
+          let invit_name = document.createElement("div");
+          invit_name.className = "invited_users_slot_name";
+          invit_name.innerHTML = invited_users[i][0];
+          let invit_id = document.createElement("div");
+          invit_id.className = "invited_users_slot_id";
+          invit_id.innerHTML = "ID: " + invited_users[i][1];
+
+          invit.appendChild(invit_name);
+          invit.appendChild(invit_id);
+
+          inv_users_area.appendChild(invit);
+        }
       }
+    }
+    else{
+      document.getElementById("home_group_title").innerHTML = current_group["title"] + " - creato da: "+ current_group["owner_email"];
 
-      if(invited_users.length > 0){
-        inv_users_area.style.display = "block";
-        let invited_title = document.createElement("div");
-        invited_title.className = "invited_title_label";
-        invited_title.innerHTML = "Utenti nel gruppo oltre te";
-        inv_users_area.appendChild(invited_title);
-      }else{
-        inv_users_area.style.display = "none";
-      }
-
-
-      for(let i = 0; i < invited_users.length;i++){
-
-        let invit = document.createElement("div");
-        invit.className = "invited_users_slot";
-        invit.setAttribute("onclick", "removeUserFromCurrentGroup(this)");
-        let invit_name = document.createElement("div");
-        invit_name.className = "invited_users_slot_name";
-        invit_name.innerHTML = invited_users[i][0];
-        let invit_id = document.createElement("div");
-        invit_id.className = "invited_users_slot_id";
-        invit_id.innerHTML = "ID: " + invited_users[i][1];
-
-        invit.appendChild(invit_name);
-        invit.appendChild(invit_id);
-
-        inv_users_area.appendChild(invit);
-      }
+      document.getElementById("delete_group_button").style.display = "none";
+      document.getElementById("invite_group_button").style.display = "none";
+      document.getElementById("edit_group_button").style.display = "none";
     }
 }
 
-function removeUserFromCurrentGroup(element) {
 
+function askRemoveUserFromCurrentGroup(element) {
   let user_to_remove_id = element.children[1].innerHTML.replace("ID: ","");
+  stitchClient.openConfirmDialog("Vuoi davvero eliminare questo utente dal gruppo?", ["", "removeUserFromCurrentGroup('"+user_to_remove_id+"')"]);
+}
+
+function removeUserFromCurrentGroup(user_to_remove_id) {
 
   let current_group = getSelectedGroup();
 
@@ -917,6 +939,7 @@ function processNewGroupDialogClick() {
 
     let group = {
         "title": result[0],
+        "owner_email": getLoggedEmail(),
         "description": result[1],
         "invited_users": [],
         "invited_users_ids_only": [],
