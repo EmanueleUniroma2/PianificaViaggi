@@ -247,6 +247,13 @@ var App_Pages = [{
                         }, {
                             "node_type": "div",
                             "node_tags": [
+                                ["innerHTML", "Imposta date selezionate: CANCELLA"],
+                                ["onclick", "setSelectedDates(4)"],
+                                ["className", "generic_button"]
+                            ]
+                        }, {
+                            "node_type": "div",
+                            "node_tags": [
                                 ["id", "invite_group_button"],
                                 ["innerHTML", "Invita su questo gruppo"],
                                 ["onclick", "inviteOnCurrentGroup()"],
@@ -1427,11 +1434,18 @@ function setGroupDateStatus(date_label, date_status){
 
   let index = getGroupUserDateIndex(group[user_key], target);
 
-  if(index == -1){
-    group[user_key].push(target);
+  if(date_status == 4 && index != -1){
+    group[user_key] = removeElementFromListAtIndex(group[user_key],index);
   }else{
-    group[user_key][index] = target;
+    if(date_status != 4){
+      if(index == -1){
+        group[user_key].push(target);
+      }else{
+        group[user_key][index] = target;
+      }
+    }
   }
+
 
   storageSetItem("", group["data_id"], group);
 }
