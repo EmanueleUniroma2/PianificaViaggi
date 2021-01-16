@@ -600,7 +600,7 @@ async function loadRemoteGroups(){
 
   if (!isNullOrUndefined(your_groups)) {
       for (let i = 0; i < your_groups.length; i++) {
-          delete your_groups[i]["_id"];
+          //delete your_groups[i]["_id"];
           localStorage.setItem(your_groups[i]["data_id"], JSON.stringify(your_groups[i]));
       }
   }
