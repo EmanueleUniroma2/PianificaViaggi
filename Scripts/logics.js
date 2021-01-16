@@ -1361,9 +1361,6 @@ function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
 }
 
 
-
-
-
 function dateBoxSelected(item) {
   item.classList.toggle("calendar-box-selected");
 }

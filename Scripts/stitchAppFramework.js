@@ -936,7 +936,7 @@ class StitchServerClient {
         if (!this.isAuthenticated()) {
             console.error("reference_to_mongo_db.patchInCollection", "user is not authenticated.");
         } else {
-            console.info("Tryng patchInCollection.", collection, data);
+            console.info("Tryng patchInCollection.");
             try {
                 result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne(search_keys,
                   patch_arguments, {

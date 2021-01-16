@@ -431,9 +431,10 @@ background: rgba(0,0,0,0.2);
   height: 1.5vw;
   border-radius: 50%;
   display: inline-block;
-  margin: 0 0.2vw;
+  margin: 0.1em 0.2vw;
   max-width: 10px;
   max-height: 10px;
+  border: 1px solid rgba(0,0,0,0.5);
 }
 .other_voter_ball_red{
   background-color: rgba(255,0,0,0.6);
@@ -445,6 +446,4 @@ background: rgba(0,0,0,0.2);
   background-color: rgba(0,255,0,0.6);
 }
 .other-voters-wrap{
-  position: absolute;
-  margin-top: -2em;
 }
