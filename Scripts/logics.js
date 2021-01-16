@@ -600,7 +600,7 @@ async function loadRemoteGroups(){
 
   if (!isNullOrUndefined(your_groups)) {
       for (let i = 0; i < your_groups.length; i++) {
-          //delete your_groups[i]["_id"];
+          delete your_groups[i]["_id"];
           localStorage.setItem(your_groups[i]["data_id"], JSON.stringify(your_groups[i]));
       }
   }
@@ -913,7 +913,6 @@ function processEditGroupDialogClick() {
 
     let result = stitchClient.lastDialogOutput;
     let new_edit = getSelectedGroup();
-    let old_id = new_edit["data_id"];
 
     for (let i = 0; i < result.length; i++) {
         if (isVoidString(result[i])) {
@@ -922,11 +921,14 @@ function processEditGroupDialogClick() {
         }
     }
 
+    //let old_id = new_edit["data_id"];
+    //storageRemoveItem(user_groups_collection_name, old_id);
+
+
     new_edit["title"] = result[0];
     new_edit["description"] = result[1];
-    new_edit["data_id"] = "group_" + stitchClient.getGUIID();
+    //new_edit["data_id"] = "group_" + stitchClient.getGUIID();
 
-    storageRemoveItem(user_groups_collection_name, old_id);
     storageSetItem(user_groups_collection_name, new_edit["data_id"], new_edit);
 
     changeGroup();
@@ -1311,11 +1313,7 @@ function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
   let group = getSelectedGroup();
   let keymap = getDatesValuesKeySet(group);
 
-  if(keymap.length == 0){
-    calendar_box.className = "calendar-box";
-  }else{
-    calendar_box.className = "none";
-  }
+  calendar_box.className = "calendar-box";
 
   for(let i = 0; i < keymap.length; i++){
 
@@ -1385,6 +1383,7 @@ function setSelectedDates(level) {
   }
 
   let group = getSelectedGroup();
+
   storageSetItem(user_groups_collection_name, group["data_id"], group);
 
   redrawCalendar();

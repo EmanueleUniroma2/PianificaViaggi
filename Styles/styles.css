@@ -6,6 +6,7 @@ html{
   margin: 0;
   padding: 0;
   background: linear-gradient(45deg, #5661a4, #cce3ff);
+  min-height: 100vh;
 }
 .form_page{
   padding: 2rem 1rem;

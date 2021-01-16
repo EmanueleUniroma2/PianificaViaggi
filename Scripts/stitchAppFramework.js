@@ -84,11 +84,20 @@ function storageGetItem(name) {
 }
 
 function storageSetItem(collection, name, value) {
+
+    let isInsertion = isNullOrUndefined(localStorage.getItem(name));
+
     let ready_to_save = JSON.stringify(value);
     localStorage.setItem(name, ready_to_save);
 
     if (!isVoidString(collection)) {
-        lastInitedAppClient.bewareStorageUpdate(collection, name, value);
+
+        if(isInsertion){
+          lastInitedAppClient.bewareStorageInsertion(collection, name, value);
+        }
+        else{
+          lastInitedAppClient.bewareStorageUpdate(collection, name, value);
+        }
     }
 }
 
@@ -881,36 +890,57 @@ class StitchServerClient {
         return result;
     }
 
-    async patchInCollection(collection, data_list) {
+
+    async patchInCollection(collection, data) {
+
+        let patch_arguments;
+        let search_keys;
+
+        // different handling based on input structure
+        if(Array.isArray(data)){
+
+              /*
+                Should be something like
+                {user_id: this.stitch_actual_client.auth.user.id} ,
+                {$set:{data:data, data2:data2, etc...}},
+                {upsert:true}
+              */
+              patch_arguments = { $set: {} };
+              for(let i = 0; i < data.length; i++){
+                let el = data[i];
+                patch_arguments["$set"][el[0]] = el[1];
+              }
+
+        }
+        else{
+
+          if(isNullOrUndefined(data["data_id"])){
+            console.error("reference_to_mongo_db.patchInCollection: data must have a 'data_id' field", data);
+            return "bad argument";
+          }
+
+          patch_arguments = {
+              $set: data
+          };
+
+          search_keys = {
+              data_id: data["data_id"]
+          };
+        }
 
         await this.getApiLock();
 
         let result = null;
 
-        /*
-          Should be something like
-          {user_id: this.stitch_actual_client.auth.user.id} ,
-          {$set:{data:data, data2:data2, etc...}},
-          {upsert:true}
-        */
-        let patch_arguments = {
-            $set: {}
-        };
-
-        for (let i = 0; i < data_list.length; i++) {
-            let el = data_list[i];
-            patch_arguments["$set"][el[0]] = el[1];
-        }
 
         if (!this.isAuthenticated()) {
             console.error("reference_to_mongo_db.patchInCollection", "user is not authenticated.");
         } else {
-            console.info("Tryng patchInCollection.", collection, data_list);
+            console.info("Tryng patchInCollection.", collection, data);
             try {
-                result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne({
-                    user_id: this.stitch_actual_client.auth.user.id
-                }, patch_arguments, {
-                    upsert: true
+                result = await this.promiseTimeout(this.reference_to_mongo_db.collection(collection).updateOne(search_keys,
+                  patch_arguments, {
+                    upsert: false
                 }));
                 console.info("Done.");
             } catch (e) {
@@ -1349,6 +1379,9 @@ class StitchAppClient {
         }
         if (message == "user not found") {
             return "L'email indicata non è associata ad alcun utente registrato.";
+        }
+        if (message == "bad argument") {
+            return "La chiamata API che si è tentata era mal strutturata.";
         }
 
         return "Errore sconosciuto (" + message + ")";
@@ -1880,6 +1913,22 @@ class StitchAppClient {
         return result;
     }
 
+
+    // override the updateRemoteModel feature by forcing for some moment
+    // the sync of a specific field
+    async insertSpecificModel(collection, model_name) {
+
+        let was = this.server.sync_models;
+        this.server.sync_models = [model_name];
+
+        // this calls uses the global SYNC_MODELS to know which models should go on backend
+        let result = await this.insertRemoteModel(collection);
+
+        this.server.sync_models = was;
+
+        return result;
+    }
+
     // override the updateRemoteModel feature by forcing for some moment
     // the sync of a specific field
     async updateSpecificModel(collection, model_name) {
@@ -1896,13 +1945,31 @@ class StitchAppClient {
     }
 
     // send a single object on the collection
-    async updateObject(collection, obj) {
+    async insertObject(collection, obj) {
         await this.handleApiResult(this.server.promiseTimeout(this.server.postInCollection(collection, obj)));
+    }
+
+    // send a single object on the collection
+    async updateObject(collection, obj) {
+        await this.handleApiResult(this.server.promiseTimeout(this.server.patchInCollection(collection, obj)));
     }
 
     // delete a single object on the collection
     async removeObject(collection, obj) {
         await this.handleApiResult(this.server.promiseTimeout(this.server.removeInCollection(collection, obj)));
+    }
+
+
+    // if the storage is updated, the client is notified
+    // then the client must check if the storage updated an item
+    // registered for syncking. If yes, synck it
+    bewareStorageInsertion(collection, name, obj) {
+        if (this.server.sync_models.indexOf(name) == -1) {
+            this.server.authenticated_models.push(name);
+            this.insertObject(collection, obj);
+        } else {
+            this.insertSpecificModel(collection, name);
+        }
     }
 
     // if the storage is updated, the client is notified
@@ -1930,6 +1997,11 @@ class StitchAppClient {
     // update all the remote models marked for sinkyng
     async updateRemoteModel(collection) {
         return await this.server.patchInCollection(collection, this.server.getDataModel());
+    }
+
+    // insert all the remote models marked for sinkyng
+    async insertRemoteModel(collection) {
+        return await this.server.postInCollection(collection, this.server.getDataModel());
     }
 
     // delete all the remote models marked for sinkyng
