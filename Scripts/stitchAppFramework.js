@@ -155,6 +155,12 @@ function showBreadCrumb(msg) {
 
     killBreadCrumb();
 
+    let timeout = 80 * msg.length;
+
+    if(timeout < 3000){
+      timeout = 3000;
+    }
+
     let d = document.createElement("div");
     d.className = "stitch_bread_crumb";
     // adjust style for lower res screens
@@ -174,7 +180,7 @@ function showBreadCrumb(msg) {
             killBreadCrumb();
         }, animation_duration);
 
-    }, 3000);
+    }, timeout);
 }
 
 function killBreadCrumb() {
@@ -1168,6 +1174,10 @@ class StitchAppClient {
         }
 
         return null;
+    }
+
+    isLoggedIn(){
+      return this.server.isAuthenticated();
     }
 
     /* base open dialog class (this uses the embedded stitch styles) */

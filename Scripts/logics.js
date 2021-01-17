@@ -1316,6 +1316,8 @@ function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
 
   calendar_box.className = "calendar-box";
 
+  let one_ball_shown = false;
+
   for(let i = 0; i < keymap.length; i++){
 
     let user_group_values = group[keymap[i]];
@@ -1344,7 +1346,7 @@ function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
           other_voter_ball.className = "other_voter_ball other_voter_ball_green";
           other_voter_ball.setAttribute("name",key_user);
         }
-
+        one_ball_shown = true;
         calendar_box.children[1].appendChild(other_voter_ball);
       }
 
@@ -1360,7 +1362,10 @@ function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
         }
       }
     }
+  }
 
+  if(one_ball_shown){
+    setTimeout(doubleClickHint, 7000);
   }
 }
 
@@ -1504,4 +1509,22 @@ function getGroupUserDateIndex(list, target) {
   }
 
   return index;
+}
+
+function doubleClickHint() {
+  let id = "double_tap_day";
+  let text = "Suggerimento: puoi premere due volte su un giorno del calendario per vedere la lista dei voti degli altri utenti per quel giorno.";
+  showHint(id, text);
+}
+
+function showHint(id, text) {
+
+  if(!stitchClient.isLoggedIn()){
+    return;
+  }
+
+  if(isNullOrUndefined(localStorage.getItem(id))){
+    showBreadCrumb(text);
+    localStorage.setItem(id, "1");
+  }
 }
