@@ -1282,6 +1282,7 @@ function calendarViewBuildFromDate(today) {
       }else{
         setupCalendarBoxBasedOnDayStatuses(calendar_box, key_date);
         calendar_box.setAttribute("onclick", "dateBoxSelected(this)");
+        calendar_box.setAttribute("ondblclick", "dateBoxDoubleClick(this)");
       }
 
       calendar_row.appendChild(calendar_box);
@@ -1333,12 +1334,15 @@ function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
         let other_voter_ball = document.createElement("div");
         if(element["s"] == 1){
           other_voter_ball.className = "other_voter_ball other_voter_ball_red";
+          other_voter_ball.setAttribute("name",key_user);
         }
         if(element["s"] == 2){
           other_voter_ball.className = "other_voter_ball other_voter_ball_yellow";
+          other_voter_ball.setAttribute("name",key_user);
         }
         if(element["s"] == 3){
           other_voter_ball.className = "other_voter_ball other_voter_ball_green";
+          other_voter_ball.setAttribute("name",key_user);
         }
 
         calendar_box.children[1].appendChild(other_voter_ball);
@@ -1360,6 +1364,47 @@ function setupCalendarBoxBasedOnDayStatuses(calendar_box, related_div_date)
   }
 }
 
+
+function dateBoxDoubleClick(item) {
+
+  let day = item.children[0].innerHTML;
+
+  let balls = item.children[1].children;
+  let stats = [];
+  for(let i = 0; i < balls.length; i++){
+    let value = "";
+    if(balls[i].className.indexOf("red") != -1){
+      value = "fast_resume_red";
+    }
+    if(balls[i].className.indexOf("yellow") != -1){
+      value = "fast_resume_yellow";
+    }
+    if(balls[i].className.indexOf("green") != -1){
+      value = "fast_resume_green";
+    }
+    stats.push({"user": balls[i].getAttribute("name"), "value": value});
+  }
+
+
+  let stat_node = document.createElement("div");
+  stat_node.className = "node_info_wrap";
+  for(let i = 0; i < stats.length; i++){
+     let node_inf = document.createElement("div");
+     node_inf.className = "node_info_main_line";
+     let node_dot = document.createElement("div");
+     node_dot.className = "node_info_main_dot " + stats[i]["value"];
+     let node_usr = document.createElement("div");
+     node_usr.className = "node_info_main_usr";
+     node_usr.innerHTML = stats[i]["user"];
+     node_inf.appendChild(node_dot);
+     node_inf.appendChild(node_usr);
+     stat_node.appendChild(node_inf);
+  }
+
+  let title = "Giorno: "+ day + " " + document.getElementById("current_month_year_label").innerHTML;
+
+  stitchClient.openCustomNodeDialog(title,"Voti degli altri utenti per il giorno selezionato:",stat_node);
+}
 
 function dateBoxSelected(item) {
   item.classList.toggle("calendar-box-selected");

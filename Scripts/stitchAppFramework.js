@@ -224,7 +224,7 @@ var Stitch_FrameWork_EmbeddedStyles = "" +
     "	border-radius: 1rem;" +
     "	margin: 10em auto;" +
     "	background-color: white;" +
-    "	width: 50vw;" +
+    "	width: 70vw;" +
     "	padding: 1em;" +
     "}" +
     ".stitch_modal_title{" +
@@ -1171,7 +1171,7 @@ class StitchAppClient {
     }
 
     /* base open dialog class (this uses the embedded stitch styles) */
-    openDialog(title, text, buttons, inputs, callbacks) {
+    openDialog(title, text, buttons, inputs, callbacks, inner_node) {
 
         let dialog_type = buttons;
 
@@ -1211,6 +1211,7 @@ class StitchAppClient {
         dialog.className = "stitch_modal_dialog";
 
         let inner_dialog = "<div class=\"stitch_modal_title\">" + title + "</div>" + "<div class=\"stitch_modal_text\">" + this.generateMultilineHTMLfromString(text) + "</div>\n";
+        inner_dialog += "<div id=\"inner_node_section_stitch_dialog\"></div>\n";
         inner_dialog += "<div style=\"margin-top: 0.5rem; text-align: end;\">\n";
 
         for (let i = 0; i < inputs.length; i++) {
@@ -1233,6 +1234,7 @@ class StitchAppClient {
 
         inner_dialog += "</div>\n";
         dialog.innerHTML = inner_dialog;
+
         inkdrop.appendChild(dialog);
         document.body.appendChild(inkdrop);
 
@@ -1248,7 +1250,13 @@ class StitchAppClient {
             button.setAttribute("onclick", callback_inline);
         }
 
+        if(!isNullOrUndefined(inner_node)){
+          document.getElementById("inner_node_section_stitch_dialog").appendChild(inner_node);
+        }
+
         setTimeout(this.fadeInDialog, 50);
+
+        return dialog;
     }
 
     dialogDispose(button_name, dialog_type) {
@@ -1271,16 +1279,19 @@ class StitchAppClient {
 
     /* some dialog shortcuts*/
     openInputDialog(body, inputs, callbacks) {
-        this.openDialog("Dati richiesti", body, "input", inputs, callbacks);
+        this.openDialog("Dati richiesti", body, "input", inputs, callbacks, null);
     }
     openConfirmDialog(body, callbacks) {
-        this.openDialog("Confermare azione", body, "confirm", null, callbacks);
+        this.openDialog("Confermare azione", body, "confirm", null, callbacks, null);
+    }
+    openCustomNodeDialog(title, body, node) {
+        this.openDialog(title, body, "alert", null, null, node);
     }
     openInfoDialog(body) {
-        this.openDialog("Informazione", body, "alert", null, null);
+        this.openDialog("Informazione", body, "alert", null, null, null);
     }
     openAlertDialog(body) {
-        this.openDialog("Nota", body, "alert", null, null);
+        this.openDialog("Nota", body, "alert", null, null, null);
     }
 
     // used to print multiline html text without using stuff like "white-space:pre" (wich gives errors on IOS)

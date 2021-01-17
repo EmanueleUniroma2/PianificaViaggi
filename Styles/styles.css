@@ -447,3 +447,39 @@ background: rgba(0,0,0,0.2);
 }
 .other-voters-wrap{
 }
+.node_info_wrap{
+  border: 1px solid rgba(0,0,0,0.2);
+  padding: 1em;
+  height: 20vh;
+  overflow-y: auto;
+}
+.node_info_main_line{
+  border-bottom: 1px solid rgba(0,0,0,0.2);
+  padding: 0.5em;
+}
+.node_info_main_dot{
+  border: 1px solid rgba(0,0,0,0.2);
+  border-radius: 50%;
+  width: 1em;
+  height: 1em;
+  display: inline-block;
+  position: relative;
+  top: 0.3em;
+  margin-right: 0.5em;
+}
+.node_info_main_usr{
+  font-size: min(3vw, 1em);
+  background: rgba(0,0,0,0.1);
+  padding: 0.5em;
+  display: inline-block;
+  width: 70%;
+}
+.fast_resume_red{
+    background: rgba(255,0,0,0.3);
+}
+.fast_resume_yellow{
+    background: rgba(255,255,0,0.3);
+}
+.fast_resume_green{
+    background: rgba(0,255,0,0.3);
+}
